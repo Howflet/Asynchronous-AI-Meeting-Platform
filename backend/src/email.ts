@@ -19,8 +19,11 @@ function createTransport() {
   const port = Number(process.env.SMTP_PORT || 587);
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
+  // If SMTP_SECURE is explicitly set, respect it. Otherwise, default to true for port 465.
+  const secureEnv = process.env.SMTP_SECURE;
+  const secure = secureEnv ? secureEnv.toLowerCase() === "true" : port === 465;
   if (host && user && pass) {
-    return nodemailer.createTransport({ host, port, auth: { user, pass } });
+    return nodemailer.createTransport({ host, port, secure, auth: { user, pass } });
   }
   // Fallback: JSON transport logs emails instead of sending, suitable for dev
   return nodemailer.createTransport({ jsonTransport: true });
