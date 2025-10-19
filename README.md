@@ -1,183 +1,144 @@
-# A²MP
+## A²MP — AI‑Augmented Meeting Personas (Monorepo)
 
-AI-assisted meeting platform that collects participant inputs, generates AI personas, runs a moderated conversation loop, and produces a structured report (highlights, decisions, actions, and a Mermaid diagram).
+A²MP helps you run structured meetings where participants submit initial inputs, AI personas discuss in rounds, and a clear report is produced at the end. This repository contains two parallel implementations you can run:
 
-This repository is a small monorepo with two implementation variants:
-- backend + frontend (recommended dev path)
-- server + web (alternate minimal pair)
+- backend + frontend (recommended for local dev)
+- server + web (alternative stack with a single API and separate UI)
 
+### Repository layout
+- `backend/`: Express API + Socket.IO realtime + conversation engine, SQLite persistence
+- `frontend/`: Vite + React UI that proxies to `backend`
+- `server/`: Alternative Express API (consolidated variant), SQLite persistence
+- `web/`: Vite + React UI targeting `server`
+- `LICENSE`: Proprietary, evaluation‑only license
 
-## Repository structure
+### Requirements
+- Node.js 18+ (Node 20+ recommended)
 
-- `backend/` — Express + Socket.IO TypeScript API (port 4000), SQLite in `backend/data/a2mp.db`
-- `frontend/` — React + Vite UI (port 5173), proxies `/api` and `/socket.io` to `:4000`
-- `server/` — Alternate Express API (port 8080), SQLite in `server/data/a2mp.sqlite`
-- `web/` — Alternate React + Vite UI (port 5173), uses `VITE_API_BASE` to point at the `server`
-- `LICENSE` — Proprietary license
+---
 
+## Option A: Run backend + frontend (recommended)
+This pair is wired together via Vite dev proxy and root scripts.
 
-## Requirements
-
-- Node.js 18+ (20+ recommended)
-- npm
-
-
-## Quick start (recommended: backend + frontend)
-
-1) Install dependencies
-
+### Install
+From the repo root:
 ```bash
+# root dev tooling (concurrently, prettier)
+npm install
+# app dependencies
 npm install --prefix backend
 npm install --prefix frontend
 ```
 
-2) Configure environment for the backend (create `backend/.env`)
-
+### Configure environment (optional but recommended)
+Create `backend/.env` with any overrides:
 ```bash
-# Server
+# Backend API
 PORT=4000
 CORS_ORIGIN=http://localhost:5173
 
-# Auth (development defaults exist, but change for real use)
+# Host auth
 HOST_PASSWORD=change-me
-JWT_SECRET=change-me
+JWT_SECRET=dev-secret-change-me
 
-# LLM (required for persona generation, moderation, and summaries)
-GEMINI_API_KEY=your-google-gemini-api-key
+# LLM (Google Gemini)
+GEMINI_API_KEY=your-gemini-api-key
 GEMINI_MODEL=gemini-1.5-pro
 
-# Email (optional; used to send participant invites)
-MAIL_FROM=a2mp@example.com
+# Email (SMTP); if omitted, dev uses a JSON/log transport
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_USER=
 SMTP_PASS=
+MAIL_FROM=a2mp@example.com
 
-# Conversation engine tick (ms)
+# Engine
 ENGINE_TICK_MS=8000
 ```
+Notes:
+- Email settings are optional in development. Without SMTP, invites are logged.
+- Default `HOST_PASSWORD` is `password` if not set; change it for anything public.
 
-3) Run both apps in dev mode (from repo root)
-
+### Develop
+From the repo root:
 ```bash
-# After installing deps above
 npm run dev
 ```
+This runs:
+- Backend on `http://localhost:4000`
+- Frontend on `http://localhost:5173`
 
-- Frontend: `http://localhost:5173`
-- API: `http://localhost:4000`
+Open the frontend, use “Host Login” with your `HOST_PASSWORD`, create a meeting, and share participant links from the UI. The engine advances turns automatically and produces a report.
 
-Notes
-- Root `npm run dev` uses `concurrently` to run `backend` and `frontend` together; it assumes you installed each app’s deps first.
-- You can also start them in two terminals with `npm run dev` inside each folder.
+### Build and run (production‑like)
+```bash
+# build API and UI bundles
+npm run build
+# start only the backend API (serve your frontend separately)
+npm run start
+```
 
+### Data storage
+- SQLite database file for this implementation is created under `backend/backend/data/a2mp.db`.
 
-## Alternate minimal pair (server + web)
+---
 
-This is a self-contained variant with a leaner API and a UI that talks to it directly.
+## Option B: Run server + web (alternative)
+Use this pair if you prefer the consolidated API in `server/` and a separate `web/` UI.
 
-1) Install dependencies
-
+### Install
 ```bash
 npm install --prefix server
 npm install --prefix web
 ```
 
-2) Configure `server/.env` (optional — see defaults in code)
-
+### Configure environment
+Create `server/.env`:
 ```bash
 PORT=8080
 WEB_ORIGIN=http://localhost:5173
 BASE_URL=http://localhost:8080
 
-# Email invites
-MAIL_FROM=no-reply@a2mp.local
+GEMINI_API_KEY=your-gemini-api-key
+
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_USER=
 SMTP_PASS=
-
-# LLM
-GEMINI_API_KEY=your-google-gemini-api-key
-GEMINI_MODEL=gemini-1.5-pro
+MAIL_FROM=no-reply@a2mp.local
+```
+Create `web/.env` (optional; defaults shown):
+```bash
+VITE_API_BASE=http://localhost:8080
 ```
 
-3) Run the API and UI (in two terminals)
-
+### Develop
+In two terminals:
 ```bash
 npm run dev --prefix server
-# In another terminal
 npm run dev --prefix web
 ```
+- API on `http://localhost:8080`
+- Web UI on `http://localhost:5173`
 
-4) Point the web app at the API (optional)
+### Data storage
+- SQLite database file for this implementation is created under `server/data/a2mp.sqlite`.
 
-`web` uses `VITE_API_BASE` (defaults to `http://localhost:8080`). For example:
+---
 
-```bash
-# From web/
-VITE_API_BASE=http://localhost:8080 npm run dev
-```
+## Common scripts
+From the repo root:
+- `npm run dev`: run `backend` and `frontend` together (concurrently)
+- `npm run start`: start only the `backend` API
+- `npm run build`: build `backend` and `frontend`
+- `npm run format`: format repo with Prettier
 
-Ports
-- Web UI: `http://localhost:5173`
-- API: `http://localhost:8080`
+Project packages also expose their own `dev`, `build`, and `start` scripts.
 
-
-## Database locations
-
-- backend: `backend/data/a2mp.db` (auto-created)
-- server: `server/data/a2mp.sqlite` (auto-created)
-
-To reset local data, stop the server(s) and delete these files/directories.
-
-
-## Development scripts
-
-From repo root:
-
-```bash
-# Run backend (4000) and frontend (5173) together
-npm run dev
-
-# Build backend and frontend
-npm run build
-
-# Start only the backend (production-style)
-npm run start
-
-# Format all files via Prettier
-npm run format
-```
-
-Within each app (`backend/`, `frontend/`, `server/`, `web/`) there are standard `dev`, `build`, and (where applicable) `start` scripts.
-
-
-## How it works (high level)
-
-- Host creates a meeting and enters participant emails.
-- Participants receive invite links and submit initial inputs.
-- Backend generates AI personas (via Gemini) and runs a moderated turn loop, emitting events via SSE/Socket.
-- A live view shows the conversation and status in real time.
-- When the conversation concludes, the system creates a final report including a Mermaid-based visual map.
-
-Key files (for reference)
-- Backend API routes: `backend/src/routes.ts`
-- Backend DB schema/init: `backend/src/db.ts`
-- LLM integration: `backend/src/llm/gemini.ts`
-- Frontend proxy config: `frontend/vite.config.ts`
-- Alternate API entry: `server/src/index.ts`
-
-
-## Production notes
-
-- Defaults like `HOST_PASSWORD` and `JWT_SECRET` are for local development; set strong values in production.
-- Restrict `CORS_ORIGIN` to your real frontend origin(s).
-- Provide a valid `GEMINI_API_KEY`; LLM-powered features require it.
-- SMTP settings are optional but required to actually send invite emails.
-- Consider running behind a reverse proxy and adding persistence/backups for SQLite.
-
+## Notes and tips
+- Frontend (`frontend/`) uses a Vite dev proxy to `/api` → `http://localhost:4000` and `/socket.io` for realtime.
+- The alternative `web/` UI targets the `server/` API and uses `VITE_API_BASE` to choose the backend origin.
+- For production, set strong values for `HOST_PASSWORD` and `JWT_SECRET`, and configure SMTP if you want email delivery.
 
 ## License
-
-This project is distributed under a proprietary license. See `LICENSE` for details.
+This software is proprietary and provided for demonstration/evaluation only. See `LICENSE` for details.
