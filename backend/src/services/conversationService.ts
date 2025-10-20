@@ -9,28 +9,12 @@ export async function ensurePersonasForMeeting(meeting: Meeting): Promise<Person
   const existing = db.prepare("SELECT * FROM personas WHERE meetingId = ?").all(meeting.id) as any[];
   if (existing.length > 0) return existing.map(rowToPersona);
 
-  // Create personas for each participant from their input
-  const inputs = getInputsForMeeting(meeting.id);
-  const personas: Persona[] = [];
-  for (const inp of inputs) {
-    const { name, mcp } = await generatePersonaFromInput(inp.content, meeting.subject);
-    const persona: Persona = {
-      id: generateId("per"),
-      meetingId: meeting.id,
-      participantId: inp.participantId,
-      role: "persona",
-      name,
-      mcp,
-      createdAt: now()
-    };
-    db.prepare("INSERT INTO personas (id, meetingId, participantId, role, name, mcp, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)")
-      .run(persona.id, persona.meetingId, persona.participantId, persona.role, persona.name, toJson(persona.mcp), persona.createdAt);
-    personas.push(persona);
-  }
+  // No longer queue persona generation upfront - generate on-demand when moderator picks them
+  console.log(`[ConversationService] Meeting ${meeting.id} will use lazy persona generation (on-demand)`);
 
-  // Create moderator persona with tools
+  // Create moderator persona immediately (doesn't require LLM call)
   const moderatorMcp: MCP = {
-    identity: "Meeting Moderator",
+    identity: "Meeting Moderator - Efficient Decision Engine",
     objectives: [
       "Guide conversation toward meeting objectives",
       "Maintain and update shared whiteboard",
@@ -38,12 +22,13 @@ export async function ensurePersonasForMeeting(meeting: Meeting): Promise<Person
       "Determine when objectives are met using check_for_conclusion"
     ],
     rules: [
+      "Protocol Rule: Do not use conversational pleasantries, greetings, or verifications (e.g., 'Hello,' 'Thank you,' 'That's a great point'). Your response must be direct, task-focused, and contain only your core argument or data.",
       "Be fair and concise",
       "Incorporate human injected messages respectfully",
       "Always include whiteboard references",
       "Return JSON when using tools"
     ],
-    outputFormat: "Plain text message to the group",
+    outputFormat: "Plain text message to the group - direct and concise, no fluff",
     tools: ["update_whiteboard", "select_next_speaker", "check_for_conclusion"]
   };
   const moderator: Persona = {
@@ -58,7 +43,8 @@ export async function ensurePersonasForMeeting(meeting: Meeting): Promise<Person
   db.prepare("INSERT INTO personas (id, meetingId, participantId, role, name, mcp, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)")
     .run(moderator.id, moderator.meetingId, moderator.participantId, moderator.role, moderator.name, toJson(moderator.mcp), moderator.createdAt);
 
-  return [...personas, moderator];
+  // Return moderator immediately; personas will be generated in background
+  return [moderator];
 }
 
 function rowToPersona(row: any): Persona {
@@ -95,14 +81,26 @@ export async function runOneTurn(meeting: Meeting, pendingHumanInjections: { aut
   const personas = (db.prepare("SELECT * FROM personas WHERE meetingId = ?").all(meeting.id) as any[]).map(rowToPersona);
   const moderator = personas.find((p) => p.role === "moderator");
   if (!moderator) throw new Error("Moderator not found");
+  
   const whiteboard = meeting.whiteboard;
   const history = getHistory(meeting.id);
+  
+  // Get participant inputs to provide as options to moderator
+  const inputs = getInputsForMeeting(meeting.id);
+  const participantOptions = inputs.map(input => {
+    const participant = db.prepare("SELECT email FROM participants WHERE id = ?").get(input.participantId) as { email: string } | undefined;
+    return {
+      email: participant?.email || 'Unknown',
+      participantId: input.participantId,
+      hasSpoken: personas.some(p => p.participantId === input.participantId)
+    };
+  });
 
   const decision = await moderatorDecideNext(
     moderator.mcp,
     whiteboard,
     history,
-    personas.filter((p) => p.role === "persona").map((p) => ({ name: p.name, mcp: p.mcp })),
+    participantOptions,
     pendingHumanInjections
   );
 
@@ -118,13 +116,66 @@ export async function runOneTurn(meeting: Meeting, pendingHumanInjections: { aut
   }
 
   if (decision.nextSpeaker.toLowerCase() === "none") {
-    return { concluded: true, moderatorNotes: decision.moderatorNotes };
+    console.log('[ConversationService] Moderator selected "none" - no clear next speaker');
+    return { concluded: false, moderatorNotes: decision.moderatorNotes, waiting: true };
   }
 
-  const speaker = personas.find((p) => p.name === decision.nextSpeaker);
-  if (!speaker) throw new Error(`Persona not found: ${decision.nextSpeaker}`);
+  // Try to find existing persona by name (from previous turns) or by participant email
+  let speaker = personas.find((p) => p.name === decision.nextSpeaker || 
+    (p.participantId && participantOptions.find(opt => opt.email === decision.nextSpeaker && opt.participantId === p.participantId)));
+  
+  // If speaker doesn't exist, generate persona on-demand
+  if (!speaker) {
+    const selectedOption = participantOptions.find(opt => opt.email === decision.nextSpeaker);
+    if (!selectedOption) {
+      console.warn(`[ConversationService] Moderator selected unknown speaker: ${decision.nextSpeaker}`);
+      return { concluded: false, moderatorNotes: "Unknown speaker selected", waiting: true };
+    }
+    
+    console.log(`[ConversationService] Generating persona on-demand for ${selectedOption.email}...`);
+    
+    // Find the participant input
+    const input = inputs.find(i => i.participantId === selectedOption.participantId);
+    if (!input) {
+      throw new Error(`No input found for participant ${selectedOption.participantId}`);
+    }
+    
+    // Generate persona using Gemini
+    const { name, mcp } = await generatePersonaFromInput(input.content, meeting.subject);
+    
+    // Store in database
+    const newPersona: Persona = {
+      id: generateId("prs"),
+      meetingId: meeting.id,
+      participantId: selectedOption.participantId,
+      role: "persona",
+      name,
+      mcp,
+      createdAt: now()
+    };
+    
+    db.prepare("INSERT INTO personas (id, meetingId, participantId, role, name, mcp, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)")
+      .run(newPersona.id, newPersona.meetingId, newPersona.participantId, newPersona.role, newPersona.name, toJson(newPersona.mcp), newPersona.createdAt);
+    
+    speaker = newPersona;
+    console.log(`[ConversationService] Generated persona "${name}" for ${selectedOption.email}`);
+  }
 
-  const msg = await personaRespond({ name: speaker.name, mcp: speaker.mcp }, meeting.whiteboard, history);
+  // Get the original participant input if this is a persona (not moderator)
+  let participantInput: string | undefined;
+  if (speaker.participantId) {
+    const input = db.prepare("SELECT content FROM participant_inputs WHERE participantId = ?").get(speaker.participantId) as { content: string } | undefined;
+    participantInput = input?.content;
+  }
+
+  const msg = await personaRespond({ name: speaker.name, mcp: speaker.mcp }, meeting.whiteboard, history, participantInput);
+  
+  // Check if message is empty or too short - indicates a generation problem
+  if (!msg || msg.trim().length < 10) {
+    console.warn(`[ConversationService] Persona ${speaker.name} produced empty/short message (${msg?.length || 0} chars). Skipping turn.`);
+    return { concluded: false, moderatorNotes: "Generation error - skipping turn", waiting: true };
+  }
+  
   const turn = appendTurn(meeting.id, `AI:${speaker.name}`, msg);
   broadcastTurn(meeting.id, turn);
   return { concluded: false, moderatorNotes: decision.moderatorNotes };
@@ -134,6 +185,15 @@ export async function attemptConclusion(meeting: Meeting) {
   const moderator = db.prepare("SELECT * FROM personas WHERE meetingId = ? AND role = 'moderator'").get(meeting.id) as any;
   if (!moderator) return { conclude: false, reason: "Moderator missing" };
   const history = getHistory(meeting.id);
+  
+  // Don't attempt conclusion if recent messages are empty (indicates generation problems)
+  const recentMessages = history.slice(-5);
+  const emptyCount = recentMessages.filter(m => !m.message || m.message.trim().length < 10).length;
+  if (emptyCount > 2) {
+    console.warn(`[ConversationService] ${emptyCount} empty messages in last 5 turns - skipping conclusion check`);
+    return { conclude: false, reason: "Generation errors detected" };
+  }
+  
   return await checkForConclusion(fromJson<MCP>(moderator.mcp), meeting.whiteboard, history);
 }
 

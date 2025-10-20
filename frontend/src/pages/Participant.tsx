@@ -6,26 +6,52 @@ export function Participant() {
   const [details, setDetails] = useState<{ subject: string; details: string; id: string } | null>(null);
   const [content, setContent] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const url = new URL(window.location.href);
     const t = url.searchParams.get('token') || '';
+    console.log('[Participant] Extracted token:', t);
     setToken(t);
-    if (t) load(t);
+    if (t) {
+      load(t);
+    } else {
+      setError('No invitation token found in URL');
+      setLoading(false);
+    }
   }, []);
 
   async function load(t: string) {
-    const { data } = await axios.get('/api/participant', { params: { token: t } });
-    setDetails({ subject: data.subject, details: data.details, id: data.meetingId });
-    if (data.hasSubmitted) setSubmitted(true);
+    try {
+      setLoading(true);
+      setError('');
+      console.log('[Participant] Fetching participant data...');
+      const { data } = await axios.get('/api/participant', { params: { token: t } });
+      console.log('[Participant] Received data:', data);
+      setDetails({ subject: data.subject, details: data.details, id: data.meetingId });
+      if (data.hasSubmitted) setSubmitted(true);
+    } catch (err: any) {
+      console.error('[Participant] Error loading:', err);
+      setError(err.response?.data?.error || 'Failed to load invitation. Please check your link.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function submit() {
-    await axios.post('/api/participant/submit', { token, content });
-    setSubmitted(true);
+    try {
+      await axios.post('/api/participant/submit', { token, content });
+      setSubmitted(true);
+    } catch (err: any) {
+      console.error('[Participant] Error submitting:', err);
+      setError(err.response?.data?.error || 'Failed to submit. Please try again.');
+    }
   }
 
-  if (!details) return <p>Loading...</p>;
+  if (loading) return <p>Loading...</p>;
+  if (error) return <div style={{ color: 'red', padding: 20 }}><p>Error: {error}</p></div>;
+  if (!details) return <p>No meeting details available</p>;
 
   return (
     <div style={{ display: 'grid', gap: 12, maxWidth: 700 }}>

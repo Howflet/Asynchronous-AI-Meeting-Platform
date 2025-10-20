@@ -3,6 +3,12 @@ import { generateId, now, toJson } from "../util.js";
 import { Meeting, Participant, Whiteboard } from "../types.js";
 
 export function createMeeting(subject: string, details: string, participantEmails: string[]): Meeting & { participants: Participant[] } {
+  // Cancel all previous meetings before creating a new one
+  const cancelledCount = db.prepare("UPDATE meetings SET status = 'cancelled' WHERE status != 'cancelled'").run().changes;
+  if (cancelledCount > 0) {
+    console.log(`[MeetingService] Cancelled ${cancelledCount} previous meeting(s) before creating new meeting`);
+  }
+  
   const meeting: Meeting = {
     id: generateId("mtg"),
     subject,

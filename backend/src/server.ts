@@ -29,7 +29,9 @@ setInterval(async () => {
     for (const r of rows) {
       const meeting = getMeeting(r.id);
       const result = await runOneTurn(meeting, []);
-      if (!result.concluded) {
+      
+      // Only check for conclusion if we're not waiting for persona generation
+      if (!result.waiting && !result.concluded) {
         const check = await attemptConclusion(meeting);
         if (check.conclude) {
           await generateFinalReport(meeting);

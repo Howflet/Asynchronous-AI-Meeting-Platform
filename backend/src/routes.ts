@@ -9,6 +9,8 @@ import { createParticipantUrl } from "./util.js";
 import { sendInvitationEmail } from "./email.js";
 import { requireHost } from "./auth.js";
 import { broadcastStatus, broadcastTurn } from "./realtimeBus.js";
+import { getRateLimiterStatus } from "./llm/gemini.js";
+import { personaQueue } from "./llm/personaQueue.js";
 
 initDb();
 
@@ -18,6 +20,20 @@ app.use(express.json({ limit: "1mb" }));
 
 // Health
 app.get("/api/health", (_, res) => res.json({ ok: true }));
+
+// Rate limiter and queue status (for monitoring)
+app.get("/api/system/status", requireHost, (req, res) => {
+  res.json({
+    rateLimiter: getRateLimiterStatus(),
+    personaQueue: personaQueue.getStatus(),
+  });
+});
+
+// Debug endpoint to get participant tokens for a meeting
+app.get("/api/meetings/:id/participants", requireHost, (req, res) => {
+  const participants = db.prepare("SELECT id, email, token, hasSubmitted FROM participants WHERE meetingId = ?").all(req.params.id);
+  res.json({ participants });
+});
 
 // Meeting creation
 const CreateMeetingSchema = z.object({
@@ -61,6 +77,12 @@ app.post("/api/participant/submit", async (req, res) => {
   if (!parse.success) return res.status(400).json({ error: parse.error.message });
   const participant = getParticipantByToken(parse.data.token);
   if (!participant) return res.status(404).json({ error: "Invalid token" });
+  
+  // Prevent duplicate submissions
+  if (participant.hasSubmitted) {
+    return res.status(400).json({ error: "You have already submitted input for this meeting" });
+  }
+  
   const input = submitParticipantInput(participant.id, parse.data.content);
   broadcastStatus(participant.meetingId, "awaiting_inputs");
 
