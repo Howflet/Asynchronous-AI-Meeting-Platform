@@ -674,20 +674,28 @@ Built with Google Gemini API, Express, React, Vite, TypeScript, and better-sqlit
 
 ## Debugging Tools
 
+View conversation:
 ```bash
-# View conversation
 node check-conversation.js [meetingId]
+```
 
-# View report
+View report:
+```bash
 node check-report.js [meetingId]
+```
 
-# List meetings
+List meetings:
+```bash
 node list-meetings.js
+```
 
-# View database
+View database:
+```bash
 node check-db.js
+```
 
-# Check quota
+Check quota:
+```bash
 node check-quota.js
 ```
 
@@ -697,64 +705,97 @@ node check-quota.js
 
 ### Meeting Not Starting
 
-- Ensure all participants submitted
-- Check: `node list-meetings.js`
-- Verify engine logs (every 15 seconds)
+Check that all participants have submitted:
+```bash
+node list-meetings.js
+```
+
+Verify engine logs run every 15 seconds in the terminal.
 
 ### API Key Issues
 
-- Verify keys at [Google AI Studio](https://makersuite.google.com/app/apikey)
-- Check quota: `node check-quota.js`
-- Both keys must be set
+Verify your keys at [Google AI Studio](https://makersuite.google.com/app/apikey)
+
+Check quota:
+```bash
+node check-quota.js
+```
+
+Both keys must be set in your `.env` file.
 
 ### Personas Repeating
 
-- Anti-repetition mechanisms included
-- Try more diverse inputs
-- Check conversation: `node check-conversation.js`
+Anti-repetition mechanisms are included. If personas still repeat, try:
+- More diverse participant inputs
+- Check conversation history:
+  ```bash
+  node check-conversation.js
+  ```
 
 ### No Report Generated
 
-- Check: `node check-report.js [meetingId]`
-- Verify meeting status is "completed"
-- Review server logs
+Check the report:
+```bash
+node check-report.js [meetingId]
+```
+
+Verify meeting status is "completed" and review server logs for errors.
 
 ---
 
 ## Production Deployment
 
-### Security
+### Security Checklist
 
-- Change `HOST_PASSWORD` to strong password
-- Set unique `JWT_SECRET`
-- Use HTTPS
-- Configure CORS properly
+- Change `HOST_PASSWORD` to a strong password
+- Set a unique `JWT_SECRET` (32+ random characters)
+- Use HTTPS for all connections
+- Configure CORS properly for your domain
 - Rotate API keys regularly
 
-### Build
+### Build and Deploy
 
+Build the project:
 ```bash
 npm run build
+```
+
+Start the production server:
+```bash
 npm run start
 ```
 
 ### Database Backup
 
+Create daily backups:
 ```bash
-cp backend/backend/data/a2mp.db backups/a2mp-$(date +%Y%m%d).db
+cp backend/backend/data/a2mp.db backups/a2mp-backup-$(date +%Y%m%d).db
 ```
 
 ---
 
 ## Development
 
-### Scripts
+### Available Scripts
 
+Run both backend and frontend:
 ```bash
-npm run dev          # Run backend + frontend
-npm run build        # Build for production
-npm run start        # Start production build
-npm run format       # Format with Prettier
+npm run dev
+```
+
+Build for production:
+```bash
+npm run build
+```
+
+Start production build:
+```bash
+npm run start
+```
+
+Format code with Prettier:
+```bash
+npm run format
 ```
 
 ### Code Structure
