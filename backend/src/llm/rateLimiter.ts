@@ -37,6 +37,7 @@ export class GeminiRateLimiter {
   // Timestamps for bucket refill
   private lastMinuteReset: number;
   private lastDayReset: number;
+  private lastRefillLogTime: number = 0; // Track when we last logged refill
   
   // Queue for pending requests
   private queue: QueuedRequest<any>[] = [];
@@ -195,6 +196,9 @@ export class GeminiRateLimiter {
     
     if (this.dailyRequestsAvailable < 1) {
       waitTime = Math.max(waitTime, timeUntilDayReset);
+      console.error('⚠️  [RateLimiter] DAILY QUOTA EXHAUSTED! No more API calls until midnight PT.');
+    } else if (this.dailyRequestsAvailable <= 20) {
+      console.warn(`⚠️  [RateLimiter] LOW DAILY QUOTA: Only ${this.dailyRequestsAvailable} requests remaining!`);
     }
     
     console.log(
@@ -218,7 +222,12 @@ export class GeminiRateLimiter {
       this.tokensAvailable = this.limits.tokensPerMinute;
       this.requestsAvailable = this.limits.requestsPerMinute;
       this.lastMinuteReset = now;
-      console.log('[RateLimiter] Minute buckets refilled');
+      
+      // Only log once per minute to avoid spam
+      if (now - this.lastRefillLogTime >= 60_000) {
+        console.log('[RateLimiter] Minute buckets refilled');
+        this.lastRefillLogTime = now;
+      }
     }
     
     // Refill daily bucket

@@ -1,7 +1,7 @@
 const Database = require('./backend/node_modules/better-sqlite3');
 const db = new Database('./backend/backend/data/a2mp.db');
 
-const meetingId = 'mtg_144f3854-8487-4aa4-9445-765802949d5e';
+const meetingId = process.argv[2] || 'mtg_2fd351c3-5dcd-42cd-8943-76b78c5f2ef5';
 
 console.log('\n=== Meeting Conversation ===');
 const turns = db.prepare(`

@@ -71,7 +71,11 @@ app.get("/api/participant", (req, res) => {
 });
 
 // Submit participant input
-const SubmitInputSchema = z.object({ token: z.string(), content: z.string().min(10) });
+const SubmitInputSchema = z.object({ 
+  token: z.string(), 
+  content: z.string().min(10),
+  name: z.string().min(1).optional() // Optional participant name
+});
 app.post("/api/participant/submit", async (req, res) => {
   const parse = SubmitInputSchema.safeParse(req.body);
   if (!parse.success) return res.status(400).json({ error: parse.error.message });
@@ -81,6 +85,11 @@ app.post("/api/participant/submit", async (req, res) => {
   // Prevent duplicate submissions
   if (participant.hasSubmitted) {
     return res.status(400).json({ error: "You have already submitted input for this meeting" });
+  }
+  
+  // Update participant name if provided
+  if (parse.data.name) {
+    db.prepare("UPDATE participants SET email = ? WHERE id = ?").run(parse.data.name, participant.id);
   }
   
   const input = submitParticipantInput(participant.id, parse.data.content);
@@ -127,8 +136,36 @@ const InjectSchema = z.object({ author: z.string(), message: z.string().min(1) }
 app.post("/api/meetings/:id/inject", (req, res) => {
   const parse = InjectSchema.safeParse(req.body);
   if (!parse.success) return res.status(400).json({ error: parse.error.message });
-  const turn = appendTurn(req.params.id, `Human:${parse.data.author}`, parse.data.message);
+  
+  const meeting = getMeeting(req.params.id);
+  
+  // Find the participant by email/name
+  const participant = db.prepare(
+    "SELECT id FROM participants WHERE meetingId = ? AND email = ?"
+  ).get(req.params.id, parse.data.author) as { id: string } | undefined;
+  
+  let speaker: string;
+  
+  if (participant) {
+    // Human interjections from participants should be labeled as Human with their name
+    speaker = `Human:${parse.data.author}`;
+    console.log(`[Routes] Human interjection from participant: ${parse.data.author}`);
+  } else {
+    // Could be the host injecting
+    console.log(`[Routes] Participant not found for ${parse.data.author}, treating as host interjection`);
+    speaker = `Human:Host`; // Host interjections stay as Human:Host
+  }
+  
+  const turn = appendTurn(req.params.id, speaker, parse.data.message);
   broadcastTurn(req.params.id, turn);
+  
+  // If meeting was paused (waiting for human input), resume it automatically
+  if (meeting.status === "paused") {
+    console.log(`[Routes] Meeting ${req.params.id} was paused - resuming after human input`);
+    db.prepare("UPDATE meetings SET status = ? WHERE id = ?").run("running", req.params.id);
+    broadcastStatus(req.params.id, "running");
+  }
+  
   res.json({ ok: true });
 });
 

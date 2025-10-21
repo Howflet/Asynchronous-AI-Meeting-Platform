@@ -16,17 +16,35 @@ import { withRetry, GEMINI_RETRY_CONFIG } from "./retryHandler.js";
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
-// Initialize rate limiter with Google AI Studio free tier limits
-// RPM: 10, TPM: 250,000, RDP: 250
-const rateLimiter = new GeminiRateLimiter({
+// Separate rate limiters for moderator and participant personas
+// This allows independent quota management and prevents moderator from exhausting participant quota
+
+// Moderator rate limiter (uses GEMINI_MODERATOR_API_KEY)
+const moderatorRateLimiter = new GeminiRateLimiter({
   requestsPerMinute: 10,
   tokensPerMinute: 250_000,
   requestsPerDay: 250,
 });
 
-function getClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY not set");
+// Participant personas rate limiter (uses GEMINI_API_KEY)
+const participantRateLimiter = new GeminiRateLimiter({
+  requestsPerMinute: 10,
+  tokensPerMinute: 250_000,
+  requestsPerDay: 250,
+});
+
+function getClient(useModerator: boolean = false) {
+  const apiKey = useModerator 
+    ? (process.env.GEMINI_MODERATOR_API_KEY || process.env.GEMINI_API_KEY)
+    : process.env.GEMINI_API_KEY;
+    
+  if (!apiKey) {
+    throw new Error(useModerator 
+      ? "GEMINI_MODERATOR_API_KEY or GEMINI_API_KEY not set" 
+      : "GEMINI_API_KEY not set"
+    );
+  }
+  
   return new GoogleGenerativeAI(apiKey);
 }
 
@@ -77,31 +95,39 @@ function extractJson(text: string): any {
 }
 
 /**
- * Get rate limiter status
+ * Get rate limiter status for both moderator and participant quotas
  */
 export function getRateLimiterStatus() {
-  return rateLimiter.getStatus();
+  return {
+    moderator: moderatorRateLimiter.getStatus(),
+    participants: participantRateLimiter.getStatus()
+  };
 }
 
 export async function generatePersonaFromInput(
   input: string,
-  meetingSubject: string
+  meetingSubject: string,
+  participantName?: string
 ): Promise<{ name: string; mcp: MCP }> {
   const system = `You are to produce a JSON object for an AI Persona's Model Contextual Protocol (MCP). 
 IMPORTANT: Return ONLY valid JSON, no markdown, no code blocks, no explanations.
 Keep descriptions brief (under 30 words each). Limit to 3-4 objectives and 3-4 rules.`;
   
+  const nameHint = participantName ? `\nParticipant Name: ${participantName} (use this name for the persona)` : '';
+  
   const user = `Meeting Subject: ${meetingSubject}
-Participant Input: ${input}
+Participant Input: ${input}${nameHint}
 
 Generate a persona for an efficient decision-making meeting.
 
 CRITICAL: First rule must be:
 "Do not use pleasantries or greetings. Be direct and task-focused."
 
+${participantName ? `Use "${participantName}" as the persona name.` : 'Create a descriptive persona name.'}
+
 Return ONLY this JSON (no markdown, keep it concise):
 {
-  "name": "PersonaName",
+  "name": "${participantName || 'PersonaName'}",
   "mcp": {
     "identity": "Brief description (under 30 words)",
     "objectives": ["Objective 1", "Objective 2", "Objective 3"],
@@ -119,16 +145,16 @@ Return ONLY this JSON (no markdown, keep it concise):
   const estimatedOutput = estimateOutputTokens('json');
   const totalEstimated = calculateTotalEstimate(estimatedInput, estimatedOutput);
   
-  // Schedule with rate limiter and retry logic
-  return await rateLimiter.scheduleRequest(
+  // Schedule with participant rate limiter and retry logic
+  return await participantRateLimiter.scheduleRequest(
     async () => {
       return await withRetry(
         async () => {
-          const genAI = getClient();
+          const genAI = getClient(false); // Use participant API key
           const model = genAI.getGenerativeModel({ 
             model: GEMINI_MODEL,
             generationConfig: {
-              maxOutputTokens: 2000, // Increased for consistency
+              maxOutputTokens: 4000,
               temperature: 0.7,
               responseMimeType: "application/json", // Force JSON output
             }
@@ -158,7 +184,7 @@ Return ONLY this JSON (no markdown, keep it concise):
           // Extract actual usage and reconcile
           const actualUsage = extractTokenUsage(resp);
           if (actualUsage) {
-            rateLimiter.reconcileUsage(totalEstimated, actualUsage.totalTokens);
+            participantRateLimiter.reconcileUsage(totalEstimated, actualUsage.totalTokens);
             logTokenUsage(
               'generatePersonaFromInput',
               { input: estimatedInput, output: estimatedOutput, total: totalEstimated },
@@ -213,29 +239,48 @@ export async function moderatorDecideNext(
   pendingHumanInjections: { author: string; message: string }[]
 ): Promise<{ nextSpeaker: string; moderatorNotes: string; whiteboardUpdate?: Partial<Whiteboard> }>
 {
-  // Ultra-minimal prompt - just last 2 turns
-  const recentHistory = history.slice(-2);
-  const speakerOptions = participantOptions.map(p => p.email);
+  // Compact prompt with essential context
+  const recentHistory = history.slice(-5); // Show last 5 turns to include human messages
+  const lastSpeaker = recentHistory.length > 0 ? recentHistory[recentHistory.length - 1].speaker : 'none';
   
-  const user = `Participants: ${speakerOptions.join(', ')}
-Last turns: ${recentHistory.map(t => `${t.speaker}: ${t.message.substring(0, 60)}`).join(' | ')}
-
-Pick next speaker (email or "none"). Return JSON: {"nextSpeaker":"email","moderatorNotes":"brief"}`;
+  // Check for recent human messages
+  const recentHumanMessages = recentHistory.filter(turn => turn.speaker.startsWith('Human:'));
+  const humanContext = recentHumanMessages.length > 0 
+    ? `\nRECENT HUMAN INPUT (IMPORTANT - RESPOND TO THIS): ${recentHumanMessages.map(h => `${h.speaker}: "${h.message.substring(0, 100)}"`).join(' | ')}`
+    : '';
+  
+  // Separate participants into spoke/not-spoke groups for clarity
+  const notSpoken = participantOptions.filter(p => !p.hasSpoken).map(p => p.email);
+  const hasSpoken = participantOptions.filter(p => p.hasSpoken).map(p => p.email);
+  
+  // Build clear instruction
+  let instruction = '';
+  if (notSpoken.length > 0) {
+    instruction = `Pick from: ${notSpoken.join(', ')}`;
+  } else if (hasSpoken.length > 0) {
+    instruction = `All spoke. Pick from: ${hasSpoken.join(', ')} or "none" if stuck.`;
+  } else {
+    instruction = 'No participants available. Pick "none".';
+  }
+  
+  const user = `Last: ${lastSpeaker}${humanContext}
+${instruction}
+{"nextSpeaker":"email or none","moderatorNotes":"brief","whiteboardUpdate":{"keyFacts":["brief"],"decisions":[],"actionItems":[]}}`;
   
   // Estimate tokens
   const estimatedInput = estimateInputTokens('', user);
   const estimatedOutput = estimateOutputTokens('json');
   const totalEstimated = calculateTotalEstimate(estimatedInput, estimatedOutput);
   
-  return await rateLimiter.scheduleRequest(
+  return await moderatorRateLimiter.scheduleRequest(
     async () => {
       return await withRetry(
         async () => {
-          const genAI = getClient();
+          const genAI = getClient(true); // Use moderator API key
           const model = genAI.getGenerativeModel({ 
             model: GEMINI_MODEL,
             generationConfig: {
-              maxOutputTokens: 2000, // Increased to match personaRespond
+              maxOutputTokens: 4000,
               temperature: 0.8,
               responseMimeType: "application/json",
             }
@@ -264,7 +309,7 @@ Pick next speaker (email or "none"). Return JSON: {"nextSpeaker":"email","modera
           
           const actualUsage = extractTokenUsage(resp);
           if (actualUsage) {
-            rateLimiter.reconcileUsage(totalEstimated, actualUsage.totalTokens);
+            moderatorRateLimiter.reconcileUsage(totalEstimated, actualUsage.totalTokens);
             logTokenUsage(
               'moderatorDecideNext',
               { input: estimatedInput, output: estimatedOutput, total: totalEstimated },
@@ -314,31 +359,56 @@ export async function personaRespond(
   history: ConversationTurn[],
   participantInput?: string
 ): Promise<string> {
-  // Ultra-minimal prompt to avoid MAX_TOKENS
-  const recentHistory = history.slice(-3); // Only last 3 turns instead of 6
+  // Show more history to avoid repetition
+  const recentHistory = history.slice(-8); // Last 8 turns to see more context
+  
+  // Extract YOUR previous messages to avoid self-repetition
+  const myPreviousMessages = recentHistory
+    .filter(t => t.speaker === `AI:${persona.name}`)
+    .map(t => t.message.substring(0, 80));
+  
+  const yourHistory = myPreviousMessages.length > 0
+    ? `\n🚫 YOU ALREADY SAID: ${myPreviousMessages.join(' | ')}\nDO NOT REPEAT THESE POINTS.`
+    : '';
+  
+  // Check for human messages in recent history
+  const recentHumanMessages = recentHistory.filter(t => t.speaker.startsWith('Human:'));
+  const humanContext = recentHumanMessages.length > 0
+    ? `\n⚠️ HUMAN INPUT (RESPOND TO THIS): ${recentHumanMessages.map(h => `${h.speaker}: "${h.message.substring(0, 100)}"`).join(' | ')}`
+    : '';
   
   const prompt = `You: ${persona.name}
-Identity: ${persona.mcp.identity.substring(0, 100)}
-${participantInput ? `Your input: "${participantInput.substring(0, 150)}"` : ''}
+Identity: ${persona.mcp.identity.substring(0, 120)}
+${participantInput ? `Your original input: "${participantInput.substring(0, 150)}"` : ''}
+${yourHistory}
+${humanContext}
 
-Last 3 turns: ${recentHistory.map(t => `${t.speaker}: ${t.message.substring(0, 60)}`).join(' | ')}
+Recent discussion: ${recentHistory.map(t => `${t.speaker}: ${t.message.substring(0, 60)}`).join(' | ')}
 
-Rules: Be direct, no pleasantries. Max 80 words. State your position or data.`;
+CRITICAL RULES:
+1. CHECK your previous messages above - say something COMPLETELY NEW
+2. BUILD ON what others said - find common ground, acknowledge valid points
+3. Make CONCESSIONS or COMPROMISES when appropriate - meetings require give-and-take
+4. Propose SPECIFIC solutions that integrate multiple viewpoints
+5. If you've made your point, SUPPORT others' ideas or add NEW information
+6. If stuck, suggest creative alternatives or ask clarifying questions
+
+Max 70 words. Focus on NEW CONTRIBUTIONS not repetition.`;
   
   // Estimate tokens
   const estimatedInput = estimateInputTokens('', prompt);
   const estimatedOutput = estimateOutputTokens('medium');
   const totalEstimated = calculateTotalEstimate(estimatedInput, estimatedOutput);
   
-  return await rateLimiter.scheduleRequest(
+  return await participantRateLimiter.scheduleRequest(
     async () => {
       return await withRetry(
         async () => {
-          const genAI = getClient();
+          const genAI = getClient(false); // Use participant API key
           const model = genAI.getGenerativeModel({ 
             model: GEMINI_MODEL,
             generationConfig: {
-              maxOutputTokens: 2000, // Increased to ensure room for persona responses
+              maxOutputTokens: 4000,
               temperature: 0.9,
             }
           });
@@ -366,7 +436,7 @@ Rules: Be direct, no pleasantries. Max 80 words. State your position or data.`;
           
           const actualUsage = extractTokenUsage(resp);
           if (actualUsage) {
-            rateLimiter.reconcileUsage(totalEstimated, actualUsage.totalTokens);
+            participantRateLimiter.reconcileUsage(totalEstimated, actualUsage.totalTokens);
             logTokenUsage(
               'personaRespond',
               { input: estimatedInput, output: estimatedOutput, total: totalEstimated },
@@ -421,15 +491,15 @@ Return ONLY this JSON structure (no markdown):
   const estimatedOutput = estimateOutputTokens('short');
   const totalEstimated = calculateTotalEstimate(estimatedInput, estimatedOutput);
   
-  return await rateLimiter.scheduleRequest(
+  return await moderatorRateLimiter.scheduleRequest(
     async () => {
       return await withRetry(
         async () => {
-          const genAI = getClient();
+          const genAI = getClient(true); // Use moderator API key
           const model = genAI.getGenerativeModel({ 
             model: GEMINI_MODEL,
             generationConfig: {
-              maxOutputTokens: 2000, // Increased for consistency
+              maxOutputTokens: 4000,
               temperature: 0.5,
               responseMimeType: "application/json",
             }
@@ -458,7 +528,7 @@ Return ONLY this JSON structure (no markdown):
           
           const actualUsage = extractTokenUsage(resp);
           if (actualUsage) {
-            rateLimiter.reconcileUsage(totalEstimated, actualUsage.totalTokens);
+            moderatorRateLimiter.reconcileUsage(totalEstimated, actualUsage.totalTokens);
             logTokenUsage(
               'checkForConclusion',
               { input: estimatedInput, output: estimatedOutput, total: totalEstimated },
@@ -507,39 +577,48 @@ export async function summarizeConversation(
   history: ConversationTurn[]
 ): Promise<{ summary: string; highlights: string[]; decisions: string[]; actionItems: string[]; visualMap: ConversationGraph }>
 {
-  const system = `You are creating a comprehensive meeting summary.
-IMPORTANT: Return ONLY valid JSON, no markdown, no code blocks, no explanations.`;
-  
-  const user = `Create a meeting summary based on:
-Whiteboard: ${JSON.stringify(whiteboard)}
-Conversation History: ${JSON.stringify(history)}
-
-Return ONLY this JSON structure (no markdown):
-{
-  "summary": "Brief summary in 200 words",
-  "highlights": ["Key point 1", "Key point 2"],
-  "decisions": ["Decision 1", "Decision 2"],
-  "actionItems": ["Action 1", "Action 2"],
-  "visualMap": {
-    "nodes": [{"id": "node1", "label": "Label"}],
-    "edges": [{"from": "node1", "to": "node2"}]
+  // Handle edge case: empty or minimal conversation
+  if (history.length === 0) {
+    return {
+      summary: "No conversation took place. The meeting concluded without substantive discussion.",
+      highlights: ["Meeting concluded immediately"],
+      decisions: [],
+      actionItems: [],
+      visualMap: { nodes: [], edges: [] }
+    };
   }
-}`;
+  
+  const system = `Create meeting summary as JSON only.`;
+  
+  // Limit and simplify conversation data to reduce prompt size
+  const recentHistory = history.slice(-10).map(t => ({
+    speaker: t.speaker,
+    msg: t.message.substring(0, 150) // Truncate long messages
+  }));
+  
+  const user = `Summarize this meeting:
+Facts: ${JSON.stringify(whiteboard.keyFacts)}
+Decisions: ${JSON.stringify(whiteboard.decisions)}
+Actions: ${JSON.stringify(whiteboard.actionItems)}
+Turns: ${JSON.stringify(recentHistory)}
+
+JSON only:
+{"summary":"100 words","highlights":["point"],"decisions":["decision"],"actionItems":["action"],"visualMap":{"nodes":[],"edges":[]}}`;
   
   // Estimate tokens
   const estimatedInput = estimateInputTokens(system, user);
   const estimatedOutput = estimateOutputTokens('long');
   const totalEstimated = calculateTotalEstimate(estimatedInput, estimatedOutput);
   
-  return await rateLimiter.scheduleRequest(
+  return await moderatorRateLimiter.scheduleRequest(
     async () => {
       return await withRetry(
         async () => {
-          const genAI = getClient();
+          const genAI = getClient(true); // Use moderator API key
           const model = genAI.getGenerativeModel({ 
             model: GEMINI_MODEL,
             generationConfig: {
-              maxOutputTokens: getMaxOutputTokens('long'),
+              maxOutputTokens: 4000,
               temperature: 0.6,
               responseMimeType: "application/json",
             }
@@ -551,7 +630,7 @@ Return ONLY this JSON structure (no markdown):
           
           const actualUsage = extractTokenUsage(resp);
           if (actualUsage) {
-            rateLimiter.reconcileUsage(totalEstimated, actualUsage.totalTokens);
+            moderatorRateLimiter.reconcileUsage(totalEstimated, actualUsage.totalTokens);
             logTokenUsage(
               'summarizeConversation',
               { input: estimatedInput, output: estimatedOutput, total: totalEstimated },
@@ -562,25 +641,46 @@ Return ONLY this JSON structure (no markdown):
           const text = resp.response.text().trim();
           console.log('[Gemini] summarizeConversation raw response:', text.substring(0, 200));
           
+          // Handle empty response
+          if (!text || text.length < 10) {
+            console.warn('[Gemini] Empty or very short response from summarizeConversation, using fallback');
+            return {
+              summary: "Meeting concluded with minimal conversation. Unable to generate comprehensive summary.",
+              highlights: history.slice(-5).map(t => `${t.speaker}: ${t.message.substring(0, 50)}...`),
+              decisions: whiteboard.decisions || [],
+              actionItems: whiteboard.actionItems || [],
+              visualMap: { nodes: [], edges: [] }
+            };
+          }
+          
           try {
             const parsed = extractJson(text);
             
-            // Validate structure
-            if (!parsed.summary || typeof parsed.summary !== 'string') {
-              throw new Error('Missing or invalid "summary" field');
-            }
-            if (!Array.isArray(parsed.highlights) || !Array.isArray(parsed.decisions) || !Array.isArray(parsed.actionItems)) {
-              throw new Error('Missing or invalid array fields');
-            }
-            if (!parsed.visualMap || !Array.isArray(parsed.visualMap.nodes) || !Array.isArray(parsed.visualMap.edges)) {
-              throw new Error('Missing or invalid "visualMap" field');
-            }
+            // Validate and provide defaults for missing fields
+            const validated = {
+              summary: parsed.summary || "No summary available",
+              highlights: Array.isArray(parsed.highlights) ? parsed.highlights : [],
+              decisions: Array.isArray(parsed.decisions) ? parsed.decisions : (whiteboard.decisions || []),
+              actionItems: Array.isArray(parsed.actionItems) ? parsed.actionItems : (whiteboard.actionItems || []),
+              visualMap: (parsed.visualMap && Array.isArray(parsed.visualMap.nodes) && Array.isArray(parsed.visualMap.edges)) 
+                ? parsed.visualMap 
+                : { nodes: [], edges: [] }
+            };
             
-            return parsed;
+            return validated;
           } catch (parseError: any) {
             console.error('[Gemini] summarizeConversation parse error:', parseError.message);
             console.error('[Gemini] Raw text:', text);
-            throw new Error(`Failed to parse summary JSON: ${parseError.message}`);
+            
+            // Final fallback: return basic summary from available data
+            console.warn('[Gemini] Using fallback summary due to parse error');
+            return {
+              summary: `Meeting discussion involved ${history.length} conversation turns. Summary generation failed due to parsing error.`,
+              highlights: history.slice(-5).map(t => `${t.speaker}: ${t.message.substring(0, 50)}...`),
+              decisions: whiteboard.decisions || [],
+              actionItems: whiteboard.actionItems || [],
+              visualMap: { nodes: [], edges: [] }
+            };
           }
         },
         'summarizeConversation',
