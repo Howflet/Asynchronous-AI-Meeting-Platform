@@ -5,6 +5,9 @@ import { generatePersonaFromInput, moderatorDecideNext, personaRespond, checkFor
 import { getInputsForMeeting } from "./participantService.js";
 import { broadcastStatus, broadcastTurn, broadcastWhiteboard } from "../realtimeBus.js";
 
+// Simple in-memory lock to prevent concurrent turn execution for the same meeting
+const meetingLocks = new Map<string, boolean>();
+
 export async function ensurePersonasForMeeting(meeting: Meeting): Promise<Persona[]> {
   const existing = db.prepare("SELECT * FROM personas WHERE meetingId = ?").all(meeting.id) as any[];
   if (existing.length > 0) return existing.map(rowToPersona);
@@ -91,10 +94,12 @@ function detectRepetitiveConversation(history: ConversationTurn[]): { isRepetiti
     return { isRepetitive: false };
   }
   
-  // If there's a recent human message (last 3 turns), don't pause - human input breaks the pattern
-  const last3Turns = history.slice(-3);
-  const hasRecentHumanMessage = last3Turns.some(t => t.speaker.startsWith('Human:'));
+  // If there's a recent human message (last 5 turns), don't pause - human input breaks the pattern
+  // Increased from 3 to 5 to give more time for AIs to respond to human input
+  const last5Turns = history.slice(-5);
+  const hasRecentHumanMessage = last5Turns.some(t => t.speaker.startsWith('Human:'));
   if (hasRecentHumanMessage) {
+    console.log('[ConversationService] Recent human message detected - skipping repetition check');
     return { isRepetitive: false };
   }
   
@@ -178,13 +183,31 @@ function detectRepetitiveConversation(history: ConversationTurn[]): { isRepetiti
 }
 
 export async function runOneTurn(meeting: Meeting, pendingHumanInjections: { author: string; message: string }[]) {
-  // SAFETY CHECK: Verify meeting is actually in running state
-  if (meeting.status !== 'running') {
-    console.log(`[ConversationService] Skipping turn for meeting ${meeting.id} - status is ${meeting.status}, not running`);
-    return { concluded: false, moderatorNotes: `Meeting status is ${meeting.status}`, waiting: true };
+  // LOCK CHECK: Prevent concurrent execution for the same meeting
+  if (meetingLocks.get(meeting.id)) {
+    console.log(`[ConversationService] Meeting ${meeting.id} is already processing a turn - skipping`);
+    return { concluded: false, moderatorNotes: 'Already processing', waiting: true };
   }
   
-  const personas = (db.prepare("SELECT * FROM personas WHERE meetingId = ?").all(meeting.id) as any[]).map(rowToPersona);
+  // Acquire lock
+  meetingLocks.set(meeting.id, true);
+  
+  try {
+    // SAFETY CHECK: Verify meeting is actually in running state
+    if (meeting.status !== 'running') {
+      console.log(`[ConversationService] Skipping turn for meeting ${meeting.id} - status is ${meeting.status}, not running`);
+      return { concluded: false, moderatorNotes: `Meeting status is ${meeting.status}`, waiting: true };
+    }
+    
+    // RACE CONDITION PROTECTION: Re-check status from database before proceeding
+    // This prevents multiple in-flight turns from executing after a pause
+    const currentMeeting = db.prepare("SELECT status FROM meetings WHERE id = ?").get(meeting.id) as { status: string } | undefined;
+    if (!currentMeeting || currentMeeting.status !== 'running') {
+      console.log(`[ConversationService] Race condition avoided - meeting ${meeting.id} status changed to ${currentMeeting?.status}`);
+      return { concluded: false, moderatorNotes: 'Status changed during execution', waiting: true };
+    }
+    
+    const personas = (db.prepare("SELECT * FROM personas WHERE meetingId = ?").all(meeting.id) as any[]).map(rowToPersona);
   const moderator = personas.find((p) => p.role === "moderator");
   if (!moderator) throw new Error("Moderator not found");
   
@@ -271,10 +294,11 @@ export async function runOneTurn(meeting: Meeting, pendingHumanInjections: { aut
       console.log('[ConversationService] Concluding after moderator selected "none"');
       return { concluded: true, moderatorNotes: decision.moderatorNotes };
     } else {
-      // If we have very few turns (< 5) and moderator already wants to stop, force conclusion
-      if (turnCount < 5) {
-        console.log('[ConversationService] Few turns and moderator selected "none" - forcing conclusion to prevent loop');
-        return { concluded: true, moderatorNotes: 'Insufficient progress - forcing conclusion' };
+      // If we have VERY few turns (< 3) and moderator already wants to stop, 
+      // the meeting likely can't proceed due to insufficient input - force conclusion
+      if (turnCount < 3) {
+        console.log('[ConversationService] Very few turns (<3) and moderator selected "none" - forcing conclusion to prevent loop');
+        return { concluded: true, moderatorNotes: 'Insufficient information to proceed - forcing conclusion' };
       }
       
       // If more turns exist, check if conversation has stalled (no new turns in recent checks)
@@ -392,9 +416,13 @@ export async function runOneTurn(meeting: Meeting, pendingHumanInjections: { aut
     return { concluded: false, moderatorNotes: "Generation error - skipping turn", waiting: true };
   }
   
-  const turn = appendTurn(meeting.id, `AI:${speaker.name}`, msg);
-  broadcastTurn(meeting.id, turn);
-  return { concluded: false, moderatorNotes: decision.moderatorNotes };
+    const turn = appendTurn(meeting.id, `AI:${speaker.name}`, msg);
+    broadcastTurn(meeting.id, turn);
+    return { concluded: false, moderatorNotes: decision.moderatorNotes };
+  } finally {
+    // Always release the lock
+    meetingLocks.delete(meeting.id);
+  }
 }
 
 export async function attemptConclusion(meeting: Meeting) {

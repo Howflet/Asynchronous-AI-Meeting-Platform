@@ -242,6 +242,7 @@ export async function moderatorDecideNext(
   // Compact prompt with essential context
   const recentHistory = history.slice(-5); // Show last 5 turns to include human messages
   const lastSpeaker = recentHistory.length > 0 ? recentHistory[recentHistory.length - 1].speaker : 'none';
+  const lastMessage = recentHistory.length > 0 ? recentHistory[recentHistory.length - 1].message : '';
   
   // Check for recent human messages
   const recentHumanMessages = recentHistory.filter(turn => turn.speaker.startsWith('Human:'));
@@ -249,21 +250,42 @@ export async function moderatorDecideNext(
     ? `\nRECENT HUMAN INPUT (IMPORTANT - RESPOND TO THIS): ${recentHumanMessages.map(h => `${h.speaker}: "${h.message.substring(0, 100)}"`).join(' | ')}`
     : '';
   
+  // Check if the last message contains a question or direct address to someone
+  const questionMatch = lastMessage.match(/(\w+),?\s+(what|how|why|do you|can you|would you|could you|should we)/i);
+  const directAddress = questionMatch ? questionMatch[1] : null;
+  
   // Separate participants into spoke/not-spoke groups for clarity
   const notSpoken = participantOptions.filter(p => !p.hasSpoken).map(p => p.email);
   const hasSpoken = participantOptions.filter(p => p.hasSpoken).map(p => p.email);
   
-  // Build clear instruction
+  // Extract who spoke last (remove AI: prefix to get just the email/name)
+  const lastSpeakerEmail = lastSpeaker.startsWith('AI:') ? lastSpeaker.substring(3) : lastSpeaker;
+  
+  // Find who should respond next by alternation (anyone except the last speaker)
+  const othersWhoSpoke = hasSpoken.filter(email => 
+    !lastSpeakerEmail.includes(email) && !email.includes(lastSpeakerEmail.split(' ')[0])
+  );
+  
+  // Build clear instruction with alternation preference
   let instruction = '';
-  if (notSpoken.length > 0) {
+  if (directAddress && hasSpoken.some(email => email.toLowerCase().includes(directAddress.toLowerCase()))) {
+    // Priority 1: Direct question - let the addressed person respond
+    const addressedPerson = hasSpoken.find(email => email.toLowerCase().includes(directAddress.toLowerCase()));
+    instruction = `⚠️ QUESTION ASKED TO ${addressedPerson}. Let them respond. Pick: ${addressedPerson}`;
+  } else if (notSpoken.length > 0) {
+    // Priority 2: Let people who haven't spoken yet go first
     instruction = `Pick from: ${notSpoken.join(', ')}`;
+  } else if (othersWhoSpoke.length > 0) {
+    // Priority 3: ALTERNATE - pick someone OTHER than the last speaker
+    instruction = `ALTERNATE SPEAKERS. Last was ${lastSpeakerEmail}. Pick from: ${othersWhoSpoke.join(', ')}`;
   } else if (hasSpoken.length > 0) {
+    // Priority 4: Everyone spoke, allow any (including "none" if stuck)
     instruction = `All spoke. Pick from: ${hasSpoken.join(', ')} or "none" if stuck.`;
   } else {
     instruction = 'No participants available. Pick "none".';
   }
   
-  const user = `Last: ${lastSpeaker}${humanContext}
+  const user = `Last: ${lastSpeaker}: "${lastMessage.substring(0, 150)}"${humanContext}
 ${instruction}
 {"nextSpeaker":"email or none","moderatorNotes":"brief","whiteboardUpdate":{"keyFacts":["brief"],"decisions":[],"actionItems":[]}}`;
   
