@@ -45,27 +45,39 @@ if (meeting.whiteboard) {
 }
 
 console.log('\n=== Final Report ===');
-if (meeting.report) {
-  const report = JSON.parse(meeting.report);
-  console.log('\nSummary:');
+const report = db.prepare('SELECT * FROM reports WHERE meetingId = ?').get(meetingId);
+
+if (report) {
+  console.log('\n📄 Summary:');
   console.log(report.summary || 'No summary available');
   
-  if (report.keyPoints && report.keyPoints.length > 0) {
-    console.log('\nKey Points:');
-    report.keyPoints.forEach((point, i) => console.log(`  ${i + 1}. ${point}`));
+  if (report.highlights) {
+    const highlights = JSON.parse(report.highlights);
+    if (highlights.length > 0) {
+      console.log('\n✨ Highlights:');
+      highlights.forEach((highlight, i) => console.log(`  ${i + 1}. ${highlight}`));
+    }
   }
   
-  if (report.decisions && report.decisions.length > 0) {
-    console.log('\nDecisions Made:');
-    report.decisions.forEach((decision, i) => console.log(`  ${i + 1}. ${decision}`));
+  if (report.decisions) {
+    const decisions = JSON.parse(report.decisions);
+    if (decisions.length > 0) {
+      console.log('\n✅ Decisions Made:');
+      decisions.forEach((decision, i) => console.log(`  ${i + 1}. ${decision}`));
+    }
   }
   
-  if (report.actionItems && report.actionItems.length > 0) {
-    console.log('\nAction Items:');
-    report.actionItems.forEach((item, i) => console.log(`  ${i + 1}. ${item}`));
+  if (report.actionItems) {
+    const actionItems = JSON.parse(report.actionItems);
+    if (actionItems.length > 0) {
+      console.log('\n🎯 Action Items:');
+      actionItems.forEach((item, i) => console.log(`  ${i + 1}. ${item}`));
+    }
   }
+  
+  console.log(`\n📅 Report Generated: ${new Date(report.createdAt).toLocaleString()}`);
 } else {
-  console.log('No report generated');
+  console.log('No report generated yet');
 }
 
 // Check conversation turns

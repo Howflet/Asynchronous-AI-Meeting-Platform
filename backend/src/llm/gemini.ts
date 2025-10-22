@@ -21,16 +21,16 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 // Moderator rate limiter (uses GEMINI_MODERATOR_API_KEY)
 const moderatorRateLimiter = new GeminiRateLimiter({
-  requestsPerMinute: 10,
-  tokensPerMinute: 250_000,
-  requestsPerDay: 250,
+  requestsPerMinute: 15,
+  tokensPerMinute: 1_000_000,
+  requestsPerDay: 1500,
 });
 
 // Participant personas rate limiter (uses GEMINI_API_KEY)
 const participantRateLimiter = new GeminiRateLimiter({
-  requestsPerMinute: 10,
-  tokensPerMinute: 250_000,
-  requestsPerDay: 250,
+  requestsPerMinute: 15,
+  tokensPerMinute: 1_000_000,
+  requestsPerDay: 1500,
 });
 
 function getClient(useModerator: boolean = false) {

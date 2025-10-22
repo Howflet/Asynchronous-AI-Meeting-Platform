@@ -21,7 +21,7 @@ server.listen(PORT, () => {
     console.log('📊 Development Mode: Enabled');
     console.log(`   - Engine tick: ${process.env.ENGINE_TICK_MS || 8000}ms`);
     console.log(`   - Max turns per meeting: ${process.env.MAX_TURNS_PER_MEETING || 20}`);
-    console.log('   - API quota: 250 requests/day (Free tier)');
+    console.log('   - API quota per key: 15 RPM, 1M TPM, 1500 RPD (Free tier)');
   }
 });
 

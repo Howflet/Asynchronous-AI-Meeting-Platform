@@ -38,6 +38,7 @@ export class GeminiRateLimiter {
   private lastMinuteReset: number;
   private lastDayReset: number;
   private lastRefillLogTime: number = 0; // Track when we last logged refill
+  private lastRequestTime: number = 0; // Track last request for burst prevention
   
   // Queue for pending requests
   private queue: QueuedRequest<any>[] = [];
@@ -50,9 +51,9 @@ export class GeminiRateLimiter {
   
   constructor(limits?: Partial<RateLimits>) {
     this.limits = {
-      requestsPerMinute: limits?.requestsPerMinute ?? 10,
-      tokensPerMinute: limits?.tokensPerMinute ?? 250_000,
-      requestsPerDay: limits?.requestsPerDay ?? 250,
+      requestsPerMinute: limits?.requestsPerMinute ?? 15,
+      tokensPerMinute: limits?.tokensPerMinute ?? 1_000_000,
+      requestsPerDay: limits?.requestsPerDay ?? 1500,
     };
     
     this.tokensAvailable = this.limits.tokensPerMinute;
@@ -109,6 +110,17 @@ export class GeminiRateLimiter {
       
       const request = this.queue[0];
       
+      // BURST PREVENTION: Enforce minimum 4-second delay between requests
+      // This prevents hitting undocumented per-second burst limits
+      const timeSinceLastRequest = Date.now() - this.lastRequestTime;
+      const minDelayMs = 4000; // 4 seconds = max ~15 requests per minute
+      
+      if (this.lastRequestTime > 0 && timeSinceLastRequest < minDelayMs) {
+        const waitMs = minDelayMs - timeSinceLastRequest;
+        console.log(`[RateLimiter] Burst prevention: waiting ${waitMs}ms before next request`);
+        await new Promise(resolve => setTimeout(resolve, waitMs));
+      }
+      
       // Check if we have capacity
       if (!this.canProcessRequest(request.estimatedTokens)) {
         // Wait and retry
@@ -121,6 +133,9 @@ export class GeminiRateLimiter {
       
       // Reserve capacity
       this.reserveCapacity(request.estimatedTokens);
+      
+      // Update last request time
+      this.lastRequestTime = Date.now();
       
       try {
         const result = await request.execute();
