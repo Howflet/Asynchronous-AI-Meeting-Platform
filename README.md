@@ -242,7 +242,7 @@ cp backend/backend/data/a2mp.db backups/a2mp-$(date +%Y%m%d).db
 
 ---
 
-## 🛠️ Development Scripts
+## Development Scripts
 
 ```bash
 npm run dev     # Run backend + frontend (dev)
