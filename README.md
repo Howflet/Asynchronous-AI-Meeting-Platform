@@ -4,33 +4,32 @@ Transform asynchronous collaboration with **AI-powered meeting personas** that d
 
 ---
 
-## 🚀 Overview
+## Overview
 
-A²MP enables structured virtual meetings where AI personas represent different stakeholders.  
-Participants submit their inputs once — then AI agents autonomously discuss the topic, collaborate, ask questions, and work toward consensus.
+A²MP enables structured virtual meetings where AI personas represent different stakeholders. Participants submit their inputs once, and then AI agents autonomously discuss the topic, collaborate, ask questions, and work toward a consensus.
 
 ### Use Cases
-- 🗳️ Distributed decision-making across time zones  
-- 💼 Budget planning with multiple stakeholders  
-- 🎯 Strategic planning sessions  
-- 🤝 Conflict resolution and compromise building  
-- 💡 Asynchronous brainstorming and ideation  
+- Distributed decision-making across time zones  
+- Budget planning with multiple stakeholders  
+- Strategic planning sessions  
+- Conflict resolution and compromise building  
+- Asynchronous brainstorming and ideation  
 
 ---
 
-## ✨ Key Features
-- ✅ AI personas generated from participant inputs  
-- 💬 Natural conversational flow with turn-taking  
-- ⏸️ Automatic pause when human input needed  
-- ⚡ Real-time conversation streaming  
-- 🧠 Smart repetition detection  
-- 🪶 Automatic report generation  
-- 🔑 Dual API key support for quota isolation  
-- 🧩 Collaborative whiteboard tracking  
+## Key Features
+- AI personas generated from participant inputs  
+- Natural conversational flow with turn-taking  
+- Automatic pause when human input needed  
+- Real-time conversation streaming  
+- Smart repetition detection  
+- Automatic report generation  
+- Dual API key support for quota isolation  
+- Collaborative whiteboard tracking  
 
 ---
 
-## 🧭 Repository Layout
+## Repository Layout
 ```
 
 backend/   – Express API + Socket.IO + conversation engine (SQLite persistence)
@@ -44,7 +43,7 @@ LICENSE    – Proprietary, evaluation-only license
 
 ---
 
-## ⚙️ Quick Start
+## Quick Start
 
 ### 1. Prerequisites
 - **Node.js 20+**
@@ -106,7 +105,7 @@ npm run dev
 
 ---
 
-## 🧠 How It Works
+## How It Works
 
 ### 1. Persona Generation
 
@@ -143,7 +142,7 @@ AI personas are instructed to:
 
 ---
 
-## 🧩 API Endpoints
+## API Endpoints
 
 ### Meetings
 
@@ -171,7 +170,7 @@ AI personas are instructed to:
 
 ---
 
-## 🧰 Debugging Tools
+## Debugging Tools
 
 ```bash
 node check-conversation.js [meetingId]  # View conversation
@@ -183,7 +182,7 @@ node check-quota.js                     # Check API quota
 
 ---
 
-## 🧾 Troubleshooting
+## Troubleshooting
 
 ### Meeting Not Starting
 
@@ -219,7 +218,7 @@ node check-quota.js                     # Check API quota
 
 ---
 
-## 🔐 Production Deployment
+## Production Deployment
 
 ### Security Checklist
 
@@ -254,7 +253,7 @@ npm run format  # Format with Prettier
 
 ---
 
-## 🧱 Tech Stack
+## Tech Stack
 
 * **Backend:** Node.js, Express, TypeScript, SQLite
 * **Frontend:** React, TypeScript, Vite
@@ -263,27 +262,8 @@ npm run format  # Format with Prettier
 
 ---
 
-## 📊 Rate Limiting
-
-Dual API-key system for quota separation:
-
-| Role        | Purpose           | Limit            |
-| ----------- | ----------------- | ---------------- |
-| Participant | Persona dialogue  | 250 req/day      |
-| Moderator   | Turn management   | 250 req/day      |
-| **Total**   | Combined capacity | **500+ req/day** |
-
----
-
-## ⚖️ License
+## License
 
 Proprietary software — evaluation only.
 See [`LICENSE`](./LICENSE) for details.
-
----
-
-## ❤️ Credits
-
-Built with **Google Gemini API**, **Express**, **React**, **Vite**, **TypeScript**, and **better-sqlite3**.
-
 
