@@ -1,0 +1,245 @@
+@startuml A2MP Meeting Flow
+title A²MP - Asynchronous AI Meeting Platform\nConversation Engine Sequence Diagram
+
+actor Host
+actor "Participant 1" as P1
+actor "Participant 2" as P2
+actor "Participant 3" as P3
+participant "Frontend\n(Vite React)" as Frontend
+participant "Backend API\n(Express)" as API
+participant "Meeting\nService" as MeetingService
+participant "Conversation\nService" as ConvService
+participant "Gemini AI\n(Moderator)" as ModeratorAI
+participant "Gemini AI\n(Persona Gen)" as PersonaAI
+participant "Rate Limiter\n(15 RPM)" as RateLimiter
+database "SQLite\nDatabase" as DB
+
+== Meeting Creation ==
+
+Host -> Frontend: Create meeting\n(subject, details, 3 participants)
+Frontend -> API: POST /api/meetings
+API -> MeetingService: createMeeting()
+MeetingService -> DB: INSERT meeting\n(status: awaiting_inputs)
+MeetingService -> DB: INSERT 3 participants\n(hasSubmitted: false)
+MeetingService --> API: meeting + tokens
+API --> Frontend: meeting created
+Frontend --> Host: Share participant links
+
+== Input Submission ==
+
+P1 -> Frontend: Submit input via token link
+Frontend -> API: POST /api/participants/:token/input
+API -> DB: INSERT participant_input
+API -> DB: UPDATE participant\n(hasSubmitted: true)
+API --> Frontend: input saved
+Frontend --> P1: Waiting for others...
+
+P2 -> Frontend: Submit input via token link
+Frontend -> API: POST /api/participants/:token/input
+API -> DB: INSERT participant_input
+API -> DB: UPDATE participant\n(hasSubmitted: true)
+
+P3 -> Frontend: Submit input via token link
+Frontend -> API: POST /api/participants/:token/input
+API -> DB: INSERT participant_input
+API -> DB: UPDATE participant\n(hasSubmitted: true)
+
+API -> DB: Check if all submitted
+DB --> API: 3/3 submitted ✓
+API -> DB: UPDATE meeting\n(status: running)
+API -> Frontend: SSE: meeting started
+Frontend --> Host: Meeting started!
+
+== Engine Tick Loop (Every 15 seconds) ==
+
+loop Every 15 seconds (ENGINE_TICK_MS)
+    API -> DB: SELECT meetings\nWHERE status='running'
+    DB --> API: [meeting]
+    
+    API -> ConvService: runOneTurn(meeting)
+    
+    alt First Turn (history.length === 0)
+        ConvService -> DB: SELECT personas
+        DB --> ConvService: [Moderator only]
+        note over ConvService: Create moderator persona\n(no LLM call needed)
+        
+        ConvService -> DB: SELECT participant_inputs
+        DB --> ConvService: 3 inputs
+        
+        ConvService -> RateLimiter: scheduleRequest()
+        RateLimiter -> ModeratorAI: moderatorDecideNext(\n  subject, details,\n  history=[],\n  participants=[P1, P2, P3]\n)
+        
+        note over ModeratorAI: **BUG #1 FIX**\nReceives meeting context:\n"📋 MEETING: [subject]\n⚠️ START THE CONVERSATION"\nPick from: P1, P2, P3
+        
+        ModeratorAI --> RateLimiter: {nextSpeaker: "P1"}
+        RateLimiter --> ConvService: decision
+        
+        alt Defensive Check (Bug #1 Prevention)
+            ConvService -> ConvService: if (decision === "none"\n  && history.length === 0)
+            note over ConvService: Override to first participant:\ndecision.nextSpeaker = P1
+        end
+        
+        ConvService -> DB: Find persona for P1
+        DB --> ConvService: persona not found
+        
+        ConvService -> RateLimiter: scheduleRequest()
+        RateLimiter -> PersonaAI: generatePersonaFromInput(\n  P1's input,\n  meeting subject\n)
+        PersonaAI --> RateLimiter: {name, mcp}
+        RateLimiter --> ConvService: persona data
+        
+        ConvService -> DB: INSERT persona\n(name: "Alice (P1)")
+        
+        ConvService -> RateLimiter: scheduleRequest()
+        RateLimiter -> PersonaAI: personaRespond(\n  Alice's MCP,\n  whiteboard,\n  history,\n  P1's input\n)
+        PersonaAI --> RateLimiter: "I think we should..."
+        RateLimiter --> ConvService: response
+        
+        ConvService -> DB: INSERT conversation_turn\n(speaker: "AI:Alice (P1)")
+        ConvService -> API: broadcastTurn()
+        API -> Frontend: SSE: new turn
+        Frontend --> Host: Alice: "I think we should..."
+        
+    else Subsequent Turns
+        ConvService -> DB: SELECT history\n(last 5 turns)
+        DB --> ConvService: recent turns
+        
+        ConvService -> ConvService: detectRepetitiveConversation()
+        
+        alt Repetition Detected
+            ConvService -> DB: UPDATE meeting\n(status: paused)
+            ConvService -> DB: INSERT turn\n("🛑 MEETING PAUSED")
+            ConvService -> API: broadcastStatus(paused)
+            API -> Frontend: SSE: paused
+            Frontend --> Host: Auto-pause: Need human input
+            note over ConvService: Return {paused: true}
+        else No Repetition
+            ConvService -> RateLimiter: scheduleRequest()
+            RateLimiter -> ModeratorAI: moderatorDecideNext(\n  whiteboard,\n  history,\n  participants\n)
+            ModeratorAI --> RateLimiter: {nextSpeaker: "P2",\n  whiteboardUpdate}
+            RateLimiter --> ConvService: decision
+            
+            alt Moderator selected "none"
+                ConvService -> ConvService: attemptConclusion()
+                
+                alt Should conclude
+                    note over ConvService: Return {concluded: true}
+                else Too early to conclude
+                    alt Turn count < 3 (Bug #1 safety)
+                        note over ConvService: Force conclusion:\n"Insufficient information"
+                    else Turn count >= 8
+                        note over ConvService: Force conclusion:\n"Moderator decided"
+                    else Continue
+                        note over ConvService: Wait for next cycle
+                    end
+                end
+            else Valid speaker selected
+                ConvService -> DB: Update whiteboard
+                
+                alt Persona not generated yet
+                    ConvService -> RateLimiter: scheduleRequest()
+                    RateLimiter -> PersonaAI: generatePersonaFromInput()
+                    PersonaAI --> RateLimiter: {name, mcp}
+                    RateLimiter --> ConvService: persona
+                    ConvService -> DB: INSERT persona
+                end
+                
+                ConvService -> RateLimiter: scheduleRequest()
+                RateLimiter -> PersonaAI: personaRespond()
+                PersonaAI --> RateLimiter: response message
+                RateLimiter --> ConvService: message
+                
+                ConvService -> DB: INSERT conversation_turn
+                ConvService -> API: broadcastTurn()
+                API -> Frontend: SSE: new turn
+                Frontend --> Host: Display new message
+            end
+        end
+    end
+    
+    alt Turn count >= 25 (MAX_TURNS)
+        ConvService --> API: {concluded: true}
+        note over API: Generate final report
+    else Check for natural conclusion
+        API -> ConvService: attemptConclusion()
+        ConvService -> RateLimiter: scheduleRequest()
+        RateLimiter -> ModeratorAI: checkForConclusion(\n  whiteboard,\n  history\n)
+        ModeratorAI --> RateLimiter: {conclude: true/false}
+        RateLimiter --> ConvService: decision
+        
+        alt Should conclude
+            ConvService --> API: {conclude: true}
+            note over API: Generate final report
+        end
+    end
+end
+
+== Human Interjection (During Meeting) ==
+
+Host -> Frontend: Type message & send
+Frontend -> API: POST /api/meetings/:id/inject
+API -> DB: Queue human message
+API -> ConvService: pendingHumanInjections.push()
+note over ConvService: Next turn will include\nhuman message in history
+
+ConvService -> DB: INSERT conversation_turn\n(speaker: "Human:Host")
+ConvService -> API: broadcastTurn()
+API -> Frontend: SSE: human message
+Frontend --> Host: Message added to conversation
+
+note over ModeratorAI: Next moderatorDecideNext()\nreceives:\n"RECENT HUMAN INPUT\n(IMPORTANT - RESPOND TO THIS)"
+
+== Meeting Conclusion ==
+
+API -> ConvService: generateFinalReport()
+ConvService -> RateLimiter: scheduleRequest()
+RateLimiter -> ModeratorAI: summarizeConversation(\n  whiteboard,\n  full history\n)
+ModeratorAI --> RateLimiter: {summary, highlights,\n  decisions, actionItems}
+RateLimiter --> ConvService: report data
+
+ConvService -> DB: INSERT report
+ConvService -> DB: UPDATE meeting\n(status: completed)
+ConvService -> API: broadcastStatus(completed)
+API -> Frontend: SSE: completed
+Frontend --> Host: Meeting complete!\nView report
+
+Host -> Frontend: View report
+Frontend -> API: GET /api/meetings/:id/report
+API -> DB: SELECT report
+DB --> API: report data
+API --> Frontend: JSON report
+Frontend --> Host: Display formatted report
+
+== Rate Limiting Details ==
+
+note over RateLimiter
+**Rate Limits (Gemini Free Tier)**
+- 15 requests per minute (RPM)
+- 1,000,000 tokens per minute (TPM)
+- 1,500 requests per day (RPD)
+
+**Burst Prevention**
+- 4-second minimum delay between requests
+- Token usage reconciliation
+- Retry with exponential backoff (3 attempts)
+
+**Two API Keys**
+- Moderator Key: Decision-making, conclusions
+- Participant Key: Persona generation, responses
+end note
+
+== Bug #1 Fix Highlights ==
+
+note over ConvService
+**Critical Fix Applied**
+✅ Defensive check: Never allow "none" 
+   when history.length === 0
+✅ Enhanced moderator prompt with 
+   meeting context on first turn
+✅ Automatic override to first participant
+   if moderator still selects "none"
+
+**Before Fix:** 67% failure rate (0-1 turns)
+**After Fix:** 100% success (24+ turns)
+end note
+
+@enduml

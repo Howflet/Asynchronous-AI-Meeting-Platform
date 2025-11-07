@@ -298,14 +298,24 @@ app.post("/api/meetings/:id/start", requireHost, (req, res) => {
 app.get("/api/meetings/:id/report", (req, res) => {
   const row = db.prepare("SELECT * FROM reports WHERE meetingId = ?").get(req.params.id) as any;
   if (!row) return res.status(404).json({ error: "Report not ready" });
+  
+  // Also fetch the conversation transcript
+  const conversation = getHistory(req.params.id);
+  
+  // Get meeting details for subject and date
+  const meeting = getMeeting(req.params.id);
+  
   res.json({
     id: row.id,
     meetingId: row.meetingId,
-    summary: row.summary,
+    subject: meeting.subject,
+    date: new Date(meeting.createdAt).toISOString(),
+    executiveSummary: row.summary,
     highlights: JSON.parse(row.highlights),
     decisions: JSON.parse(row.decisions),
     actionItems: JSON.parse(row.actionItems),
     visualMap: JSON.parse(row.visualMap),
+    transcript: conversation,
     createdAt: row.createdAt
   });
 });
