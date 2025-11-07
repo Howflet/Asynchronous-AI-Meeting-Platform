@@ -1,296 +1,760 @@
+# A²MP — Asynchronous AI Meeting Platform<<<<<<< HEAD
+
 # A²MP — Asynchronous AI Meeting Platform# A²MP — Asynchronous AI Meeting Platform# A²MP - Asynchronous AI Meeting Platform# A²MP - Asynchronous AI Meeting Platform# A²MP — Asynchronous AI Meeting Platform## A²MP — AI‑Augmented Meeting Personas (Monorepo)
 
+Transform asynchronous collaboration with **AI-powered meeting personas** that discuss, debate, and reach consensus on your behalf.=======
 
+# A²MP — Asynchronous AI Meeting Platform  
 
-Transform asynchronous collaboration with AI-powered meeting personas that discuss, debate, and reach consensus on your behalf.
-
-
-
-## OverviewTransform asynchronous collaboration with AI-powered meeting personas that discuss, debate, and reach consensus on your behalf.
-
-
-
-A²MP (Asynchronous AI Meeting Platform) enables structured virtual meetings where AI personas represent different stakeholders. Participants submit their inputs once, then AI agents discuss the topic in **real-time**, collaborate, ask questions, and work toward consensus completely autonomously.
+## Overview>>>>>>> 79e53290a585ba334eb8e4ff5fabb98058e43c69
 
 
 
-**Perfect for:**## OverviewTransform asynchronous collaboration with AI-powered meeting personas that discuss, debate, and reach consensus on your behalf.
+A²MP enables structured virtual meetings where AI personas represent different stakeholders. Participants submit their inputs once, then AI agents discuss the topic in **real-time**, collaborate, ask questions, and work toward consensus completely autonomously.Transform asynchronous collaboration with **AI-powered meeting personas** that discuss, debate, and reach consensus on your behalf.
+
+
+
+**Perfect for:**---
 
 - 🗳️ Distributed decision-making across time zones  
 
-- 💼 Budget planning with multiple stakeholders
+- 💼 Budget planning with multiple stakeholders## Overview
 
 - 🎯 Strategic planning sessions
 
-- 🤝 Conflict resolution and compromise buildingA²MP (Asynchronous AI Meeting Platform) enables structured virtual meetings where AI personas represent different stakeholders. Participants submit their inputs once, then AI agents discuss the topic in **real-time**, collaborate, ask questions, and work toward consensus completely autonomously.
+- 🤝 Conflict resolution and compromise buildingA²MP enables structured virtual meetings where AI personas represent different stakeholders. Participants submit their inputs once, and then AI agents autonomously discuss the topic, collaborate, ask questions, and work toward a consensus.
 
 - 📊 Asynchronous brainstorming and ideation
 
+### Use Cases
+
+## ✨ Key Features- Distributed decision-making across time zones  
+
+- Budget planning with multiple stakeholders  
+
+- ✅ **AI personas** generated from participant inputs- Strategic planning sessions  
+
+- ✅ **Real-time conversation streaming** via Socket.IO WebSockets- Conflict resolution and compromise building  
+
+- ✅ **Smart turn-taking** with natural conversational flow- Asynchronous brainstorming and ideation  
+
+- ✅ **Automatic pause** when human input needed
+
+- ✅ **Live participation** - inject messages during conversations<<<<<<< HEAD
+
+- ✅ **Collaborative whiteboard** tracking shared ideas## OverviewTransform asynchronous collaboration with AI-powered meeting personas that discuss, debate, and reach consensus on your behalf.
+
+- ✅ **Visual message distinction** - color-coded AI vs human messages=======
+
+- ✅ **Smart repetition detection** to prevent loops---
+
+- ✅ **Automatic report generation** with consensus summaries and transcripts>>>>>>> 79e53290a585ba334eb8e4ff5fabb98058e43c69
+
+- ✅ **Dual API key support** for quota isolation
+
+## Key Features
+
+## Repository Structure- AI personas generated from participant inputs  
+
+- Natural conversational flow with turn-taking  
+
+```- Automatic pause when human input needed  
+
+backend/           – Express API + Socket.IO + conversation engine (SQLite)- Real-time conversation streaming  
+
+nextjs-frontend/   – Next.js 14 UI with real-time features- Smart repetition detection  
+
+check-*.js         – Debugging utilities- Automatic report generation  
+
+LICENSE           – Proprietary, evaluation-only license- Dual API key support for quota isolation  
+
+```- Collaborative whiteboard tracking  
 
 
-## ✨ Key Features
 
-**Perfect for:**## Overview> Transform asynchronous collaboration with AI-powered meeting personas that discuss, debate, and reach consensus on your behalf.
-
-- ✅ **AI personas** generated from participant inputs
-
-- ✅ **Real-time conversation streaming** via Socket.IO WebSockets- 🗳️ Distributed decision-making across time zones  
-
-- ✅ **Smart turn-taking** with natural conversational flow
-
-- ✅ **Automatic pause** when human input needed- 💼 Budget planning with multiple stakeholders
-
-- ✅ **Live participation** - inject messages during conversations
-
-- ✅ **Collaborative whiteboard** tracking shared ideas- 🎯 Strategic planning sessions
-
-- ✅ **Visual message distinction** - color-coded AI vs human messages
-
-- ✅ **Smart repetition detection** to prevent loops- 🤝 Conflict resolution and compromise buildingA²MP enables structured virtual meetings where AI personas represent different stakeholders. Participants submit their inputs once, then AI agents autonomously discuss the topic, collaborate, ask questions, and work toward consensus.
-
-- ✅ **Automatic report generation** with consensus summaries and transcripts
-
-- ✅ **Dual API key support** for quota isolation- 📊 Asynchronous brainstorming and ideation
+## Quick Start---
 
 
 
-## Quick Start
+### Prerequisites<<<<<<< HEAD
 
+- **Node.js 20+** (required)A²MP (Asynchronous AI Meeting Platform) enables structured virtual meetings where AI personas represent different stakeholders. Participants submit their inputs once, then AI agents discuss the topic in **real-time**, collaborate, ask questions, and work toward consensus completely autonomously.
 
+- **Google Gemini API Key** ([Get one here](https://makersuite.google.com/app/apikey))=======
 
-### Prerequisites## ✨ Key Features
-
-- **Node.js 20+** (required)
-
-- **Google Gemini API Key** ([Get one here](https://makersuite.google.com/app/apikey))**Use Cases:**## Overview> Transform asynchronous collaboration with AI-powered meeting personas that discuss, debate, and reach consensus on your behalf.A²MP helps you run structured meetings where participants submit initial inputs, AI personas discuss in rounds, and a clear report is produced at the end. This repository contains two parallel implementations you can run:
-
-- Optional: SMTP credentials for email invitations
-
-- ✅ **AI personas** generated from participant inputs
-
-### 1. Clone & Install
-
-- ✅ **Real-time conversation streaming** via Socket.IO WebSockets- Distributed decision-making across time zones
-
-```bash
-
-git clone <your-repo-url>- ✅ **Smart turn-taking** with natural conversational flow
-
-cd Asynchronous-AI-Meeting-Platform
-
-- ✅ **Automatic pause** when human input needed- Budget planning with multiple stakeholders
-
-# Install dependencies
-
-npm install- ✅ **Live participation** - inject messages during conversations
-
-npm install --prefix backend
-
-npm install --prefix frontend- ✅ **Collaborative whiteboard** tracking shared ideas- Strategic planning sessions
+- Optional: SMTP credentials for email invitations## Repository Layout
 
 ```
 
-- ✅ **Visual message distinction** - color-coded AI vs human messages
-
-### 2. Configure Environment
-
-- ✅ **Smart repetition detection** to prevent loops- Conflict resolution and compromise buildingA²MP (Asynchronous AI Meeting Platform) enables structured virtual meetings where AI personas represent different stakeholders. Participants submit their inputs once, then AI agents discuss the topic in real-time, collaborate, ask questions, and work toward consensus completely autonomously.
-
-```bash
-
-# Copy the example file- ✅ **Automatic report generation** with consensus summaries
-
-cp backend/.env.example backend/.env
-
-```- ✅ **Dual API key support** for quota isolation- Asynchronous brainstorming and ideation
+### 1. Clone & Install>>>>>>> 79e53290a585ba334eb8e4ff5fabb98058e43c69
 
 
+
+```bashbackend/   – Express API + Socket.IO + conversation engine (SQLite persistence)
+
+git clone <your-repo-url>frontend/  – React + Vite UI (proxies to backend)
+
+cd Asynchronous-AI-Meeting-Platformserver/    – Alternative consolidated Express API
+
+web/       – React + Vite UI for server API
+
+# Install dependenciescheck-*.js – Debugging utilities
+
+npm installLICENSE    – Proprietary, evaluation-only license
+
+npm install --prefix backend  
+
+npm install --prefix nextjs-frontend````
+
+```
+
+<<<<<<< HEAD
+
+### 2. Configure Environment**Perfect for:**## OverviewTransform asynchronous collaboration with AI-powered meeting personas that discuss, debate, and reach consensus on your behalf.
+
+
+
+```bash- 🗳️ Distributed decision-making across time zones  
+
+# Copy the example file
+
+cp backend/.env.example backend/.env- 💼 Budget planning with multiple stakeholders
+
+```
+
+- 🎯 Strategic planning sessions
 
 Edit `backend/.env` with your API keys:
 
-```env
-
-GEMINI_API_KEY=your-api-key-here## Quick Start
-
-GEMINI_MODERATOR_API_KEY=your-moderator-api-key-here
-
-```
-
-
-
-### 3. Run Development Server### Prerequisites**Key Features:**
-
-
-
-```bash- **Node.js 20+** (required)
-
-npm run dev
-
-```- **Google Gemini API Key** ([Get one here](https://makersuite.google.com/app/apikey))- AI personas generated from participant inputs**Perfect for:**## Overview- backend + frontend (recommended for local dev)
-
-
-
-This starts:- Optional: SMTP credentials for email invitations
-
-- 🔧 Backend API on http://localhost:4000
-
-- 🎨 Frontend UI on http://localhost:5174- Natural conversational flow with turn-taking
-
-
-
-### 4. Create Your First Meeting### 1. Clone & Install
-
-
-
-1. Open http://localhost:5174- Automatic pause when human input needed- 🗳️ Distributed decision-making across time zones
-
-2. Log in as host (default password: `password`)
-
-3. Create a meeting with 2+ participants  ```bash
-
-4. Share participant links
-
-5. Submit inputs as each participantgit clone <your-repo-url>- Real-time conversation streaming
-
-6. Watch the AI conversation unfold in real-time!
-
-cd Asynchronous-AI-Meeting-Platform
-
-## How It Works
-
-- Collaborative whiteboard tracking- 💼 Budget planning with multiple stakeholders- server + web (alternative stack with a single API and separate UI)
-
-### 1. Persona Generation
-
-Each participant's input is analyzed to create a unique AI persona with:# Install dependencies
-
-- Identity and role description
-
-- Objectives and priorities  npm install- Smart repetition detection
-
-- Communication style
-
-- Model Context Protocol (MCP) instructionsnpm install --prefix backend
-
-
-
-### 2. Real-Time Conversation Enginenpm install --prefix frontend- Dual API key support for quota isolation- 🎯 Strategic planning sessions
-
-The engine runs continuously and:
-
-- Monitors meetings in "running" status```
-
-- Uses AI moderator to decide next speaker
-
-- Generates responses from selected personas
-
-- Detects repetition patterns and pauses if stuck
-
-- Broadcasts updates via Socket.IO WebSockets### 2. Configure Environment
-
-- Checks for natural conclusion points
-
----- 🤝 Conflict resolution and compromise building A²MP (Asynchronous AI Meeting Platform) enables structured virtual meetings where AI personas represent different stakeholders. Participants submit their inputs once, then AI agents discuss the topic in real-time, collaborate, ask questions, and work toward consensus completely autonomously.
-
-### 3. Smart Turn-Taking
-
-Moderator uses priority logic:```bash
-
-1. **Direct Questions**: If AI asks another AI a question, let them respond
-
-2. **First-Time Speakers**: Give everyone a chance before repeating# Copy the example file
-
-3. **Alternation**: Prefer switching speakers (A→B→A→B)
-
-4. **Free Choice**: Any speaker if no constraintscp backend/.env.example backend/.env
-
-
-
-### 4. Collaboration Features```## Quick Start- 📊 Asynchronous brainstorming and ideation
-
-AI personas are instructed to:
-
-- Build on others' ideas
-
-- Find common ground and compromise  
-
-- Make concessions when appropriateEdit `backend/.env` with your API keys:
-
-- Propose integrated solutions
-
-- Support valid points from others```env
-
-- Avoid repetition and circular arguments
-
-GEMINI_API_KEY=your-api-key-here### Prerequisites### Repository layout
-
-## Configuration
-
-GEMINI_MODERATOR_API_KEY=your-moderator-api-key-here
-
-Create `backend/.env` with your settings. See `backend/.env.example` for a complete template.
-
-```- Node.js 20+
-
-### Required Settings
-
-
-
-```bash
-
-# Google Gemini API Keys (REQUIRED)### 3. Run Development Server- Google Gemini API Key ([Get one here](https://makersuite.google.com/app/apikey))**Key Features:**
+```env- 🤝 Conflict resolution and compromise buildingA²MP (Asynchronous AI Meeting Platform) enables structured virtual meetings where AI personas represent different stakeholders. Participants submit their inputs once, then AI agents discuss the topic in **real-time**, collaborate, ask questions, and work toward consensus completely autonomously.
 
 GEMINI_API_KEY=your-api-key-here
 
+GEMINI_MODERATOR_API_KEY=your-moderator-api-key-here- 📊 Asynchronous brainstorming and ideation
+
+```
+
+
+
+### 3. Run Development Server
+
+## ✨ Key Features
+
+```bash
+
+npm run dev**Perfect for:**## Overview> Transform asynchronous collaboration with AI-powered meeting personas that discuss, debate, and reach consensus on your behalf.
+
+```
+
+- ✅ **AI personas** generated from participant inputs
+
+This starts:
+
+- 🔧 Backend API on http://localhost:4000- ✅ **Real-time conversation streaming** via Socket.IO WebSockets- 🗳️ Distributed decision-making across time zones  
+
+- 🎨 Next.js Frontend on http://localhost:3000
+
+- ✅ **Smart turn-taking** with natural conversational flow
+
+### 4. Create Your First Meeting
+
+- ✅ **Automatic pause** when human input needed- 💼 Budget planning with multiple stakeholders
+
+1. Open http://localhost:3000
+
+2. Log in as host (default password: `password`)- ✅ **Live participation** - inject messages during conversations
+
+3. Create a meeting with 2+ participants  
+
+4. Share participant links- ✅ **Collaborative whiteboard** tracking shared ideas- 🎯 Strategic planning sessions
+
+5. Submit inputs as each participant
+
+6. Watch the AI conversation unfold in real-time!- ✅ **Visual message distinction** - color-coded AI vs human messages
+
+
+
+## How It Works- ✅ **Smart repetition detection** to prevent loops- 🤝 Conflict resolution and compromise buildingA²MP enables structured virtual meetings where AI personas represent different stakeholders. Participants submit their inputs once, then AI agents autonomously discuss the topic, collaborate, ask questions, and work toward consensus.
+
+
+
+### 1. Persona Generation- ✅ **Automatic report generation** with consensus summaries and transcripts
+
+Each participant's input is analyzed to create a unique AI persona with:
+
+- Identity and role description- ✅ **Dual API key support** for quota isolation- 📊 Asynchronous brainstorming and ideation
+
+- Objectives and priorities  
+
+- Communication style
+
+- Model Context Protocol (MCP) instructions
+
+## Quick Start
+
+### 2. Real-Time Conversation Engine
+
+The engine runs continuously and:
+
+- Monitors meetings in "running" status
+
+- Uses AI moderator to decide next speaker### Prerequisites## ✨ Key Features
+
+- Generates responses from selected personas
+
+- Detects repetition patterns and pauses if stuck- **Node.js 20+** (required)
+
+- Broadcasts updates via Socket.IO WebSockets
+
+- Checks for natural conclusion points- **Google Gemini API Key** ([Get one here](https://makersuite.google.com/app/apikey))**Use Cases:**## Overview> Transform asynchronous collaboration with AI-powered meeting personas that discuss, debate, and reach consensus on your behalf.A²MP helps you run structured meetings where participants submit initial inputs, AI personas discuss in rounds, and a clear report is produced at the end. This repository contains two parallel implementations you can run:
+
+
+
+### 3. Smart Turn-Taking- Optional: SMTP credentials for email invitations
+
+Moderator uses priority logic:
+
+1. **Direct Questions**: If AI asks another AI a question, let them respond- ✅ **AI personas** generated from participant inputs
+
+2. **First-Time Speakers**: Give everyone a chance before repeating
+
+3. **Alternation**: Prefer switching speakers (A→B→A→B)### 1. Clone & Install
+
+4. **Free Choice**: Any speaker if no constraints
+
+- ✅ **Real-time conversation streaming** via Socket.IO WebSockets- Distributed decision-making across time zones
+
+### 4. Collaboration Features
+
+AI personas are instructed to:```bash
+
+- Build on others' ideas
+
+- Find common ground and compromise  git clone <your-repo-url>- ✅ **Smart turn-taking** with natural conversational flow
+
+- Make concessions when appropriate
+
+- Propose integrated solutionscd Asynchronous-AI-Meeting-Platform
+
+- Support valid points from others
+
+- Avoid repetition and circular arguments- ✅ **Automatic pause** when human input needed- Budget planning with multiple stakeholders
+
+
+
+## Configuration# Install dependencies
+
+
+
+Create `backend/.env` with your settings. See `backend/.env.example` for a complete template.npm install- ✅ **Live participation** - inject messages during conversations
+
+
+
+### Required Settingsnpm install --prefix backend
+
+
+
+```bashnpm install --prefix frontend- ✅ **Collaborative whiteboard** tracking shared ideas- Strategic planning sessions
+
+# Google Gemini API Keys (REQUIRED)
+
+GEMINI_API_KEY=your-api-key-here```
+
 GEMINI_MODERATOR_API_KEY=your-moderator-api-key-here
 
+```- ✅ **Visual message distinction** - color-coded AI vs human messages
+
+
+
+### Server Configuration### 2. Configure Environment
+
+
+
+```bash- ✅ **Smart repetition detection** to prevent loops- Conflict resolution and compromise buildingA²MP (Asynchronous AI Meeting Platform) enables structured virtual meetings where AI personas represent different stakeholders. Participants submit their inputs once, then AI agents discuss the topic in real-time, collaborate, ask questions, and work toward consensus completely autonomously.
+
+PORT=4000
+
+CORS_ORIGIN=http://localhost:3000```bash
+
 ```
+
+# Copy the example file- ✅ **Automatic report generation** with consensus summaries
+
+### Host Authentication
+
+cp backend/.env.example backend/.env
 
 ```bash
 
-### Server Configuration
+HOST_PASSWORD=your-secure-password```- ✅ **Dual API key support** for quota isolation- Asynchronous brainstorming and ideation
 
-npm run dev
+JWT_SECRET=your-jwt-secret-key=======
 
-```bash
+```---
 
-PORT=4000```### Installation- ✅ AI personas generated from participant inputs**Perfect for:**- `backend/`: Express API + Socket.IO realtime + conversation engine, SQLite persistence
 
-CORS_ORIGIN=http://localhost:5174
+
+### AI Model Settings## Quick Start
+
+
+
+```bash### 1. Prerequisites
+
+GEMINI_MODEL=gemini-2.5-flash- **Node.js 20+**
+
+ENGINE_TICK_MS=15000- **Google Gemini API Key** ([Get one here](https://makersuite.google.com/app/apikey))
+
+MAX_TURNS_PER_MEETING=10- *(Optional)* SMTP credentials for email invitations
 
 ```
 
+### 2. Clone & Install
 
+### Email (Optional)```bash
 
-### Host AuthenticationThis starts:
+git clone <your-repo-url>
 
+```bashcd Asynchronous-AI-Meeting-Platform
 
+SMTP_HOST=smtp.gmail.com
 
-```bash- 🔧 Backend API on http://localhost:4000
+SMTP_PORT=587npm install
+
+SMTP_USER=your-email@gmail.comnpm install --prefix backend
+
+SMTP_PASS=your-app-passwordnpm install --prefix frontend
+
+MAIL_FROM=noreply@yourdomain.com````
+
+```
+
+### 3. Configure Environment
+
+## Usage Guide
+
+```bash
+
+### Creating a Meetingcp backend/.env.example backend/.env
+
+```
+
+1. Log in as host
+
+2. Enter meeting subject and contextEdit `backend/.env`:
+
+3. Add participant emails
+
+4. Click "Create Meeting & Invite"```env
+
+5. Participants submit via unique linksGEMINI_API_KEY=your-api-key
+
+6. Meeting starts automaticallyGEMINI_MODERATOR_API_KEY=your-moderator-api-key
 
 HOST_PASSWORD=your-secure-password
 
-JWT_SECRET=your-jwt-secret-key- 🎨 Frontend UI on http://localhost:5174```bash- ✅ Natural conversational flow with turn-taking
+### Watching LiveJWT_SECRET=your-jwt-secret-key
 
 ```
 
+- **Host View**: See all turns, whiteboard, inject messages
+
+- **Participant View**: Watch conversation after submission, inject when pausedOptional email settings:
+
+>>>>>>> 79e53290a585ba334eb8e4ff5fabb98058e43c69
+
+### Human Interjection
+
+```env
+
+- Meetings pause when conversation gets stuckSMTP_HOST=smtp.gmail.com
+
+- Host or participants can inject guidanceSMTP_PORT=587
+
+- Meeting resumes automatically after inputSMTP_USER=your-email@gmail.com
+
+- Messages are visually distinguished (green for human, blue for AI)SMTP_PASS=your-app-password
+
+MAIL_FROM=noreply@yourdomain.com
+
+## API Endpoints```
 
 
-### AI Model Settings
 
-### 4. Create Your First Meetinggit clone <your-repo-url>
+### Meetings### 4. Run Development Server
+
+- `POST /api/meetings` - Create meeting
+
+- `GET /api/meetings/:id/status` - Get status with conversation  <<<<<<< HEAD
+
+- `POST /api/meetings/:id/inject` - Inject human messageEdit `backend/.env` with your API keys:
+
+- `POST /api/meetings/:id/advance` - Advance one turn (host)
+
+- `GET /api/meetings/:id/report` - Get complete report with transcript```env
+
+
+
+### ParticipantsGEMINI_API_KEY=your-api-key-here## Quick Start
+
+- `GET /api/participant?token=xxx` - Get participant details
+
+- `POST /api/participant/submit` - Submit inputGEMINI_MODERATOR_API_KEY=your-moderator-api-key-here
+
+
+
+### Authentication```
+
+- `POST /api/auth/host/login` - Host login
+
+
+
+### Real-time
+
+- **Socket.IO Events**: `turn`, `status`, `whiteboard` for live updates### 3. Run Development Server### Prerequisites**Key Features:**
+
+- **WebSocket Connection**: Automatic room joining and broadcasting
+
+
+
+## Debugging Tools
+
+```bash- **Node.js 20+** (required)
+
+View conversation:
+
+```bashnpm run dev
+
+node check-conversation.js [meetingId]
+
+``````- **Google Gemini API Key** ([Get one here](https://makersuite.google.com/app/apikey))- AI personas generated from participant inputs**Perfect for:**## Overview- backend + frontend (recommended for local dev)
+
+
+
+View report:
 
 ```bash
 
-GEMINI_MODEL=gemini-2.5-flash
-
-ENGINE_TICK_MS=15000
-
-MAX_TURNS_PER_MEETING=101. Open http://localhost:5174cd Asynchronous-AI-Meeting-Platform- ✅ Automatic pause when human input needed- 🗳️ Distributed decision-making across time zones- `frontend/`: Vite + React UI that proxies to `backend`
+node check-report.js [meetingId]  This starts:- Optional: SMTP credentials for email invitations
 
 ```
 
-2. Log in as host (default password: `password`)
+- 🔧 Backend API on http://localhost:4000
+
+List meetings:
+
+```bash- 🎨 Frontend UI on http://localhost:5174- Natural conversational flow with turn-taking
+
+node list-meetings.js
+
+```
+
+
+
+View database:### 4. Create Your First Meeting### 1. Clone & Install
+
+```bash
+
+node check-db.js
+
+```
+
+1. Open http://localhost:5174- Automatic pause when human input needed- 🗳️ Distributed decision-making across time zones
+
+Check quota:
+
+```bash2. Log in as host (default password: `password`)
+
+node check-quota.js
+
+```3. Create a meeting with 2+ participants  ```bash
+
+
+
+## Troubleshooting4. Share participant links
+
+
+
+### Meeting Not Starting5. Submit inputs as each participantgit clone <your-repo-url>- Real-time conversation streaming
+
+
+
+Check that all participants have submitted:6. Watch the AI conversation unfold in real-time!
+
+```bash
+
+node list-meetings.jscd Asynchronous-AI-Meeting-Platform
+
+```
+
+## How It Works
+
+Verify engine logs run every 15 seconds in the terminal.
+
+- Collaborative whiteboard tracking- 💼 Budget planning with multiple stakeholders- server + web (alternative stack with a single API and separate UI)
+
+### API Key Issues
+
+### 1. Persona Generation
+
+Verify your keys at [Google AI Studio](https://makersuite.google.com/app/apikey)
+
+Each participant's input is analyzed to create a unique AI persona with:# Install dependencies
+
+Check quota:
+
+```bash- Identity and role description
+
+node check-quota.js
+
+```- Objectives and priorities  npm install- Smart repetition detection
+
+
+
+Both keys must be set in your `.env` file.- Communication style
+
+
+
+### Personas Repeating- Model Context Protocol (MCP) instructionsnpm install --prefix backend
+
+
+
+Anti-repetition mechanisms are included. If personas still repeat, try:
+
+- More diverse participant inputs
+
+- Check conversation history:### 2. Real-Time Conversation Enginenpm install --prefix frontend- Dual API key support for quota isolation- 🎯 Strategic planning sessions
+
+  ```bash
+
+  node check-conversation.jsThe engine runs continuously and:
+
+  ```
+
+- Monitors meetings in "running" status```
+
+### Real-time Updates Not Working
+
+- Uses AI moderator to decide next speaker
+
+- Ensure Socket.IO connection is established (check browser console)
+
+- Verify WebSocket connections aren't blocked by firewall- Generates responses from selected personas
+
+- Check that backend Socket.IO server is running on port 4000
+
+- Detects repetition patterns and pauses if stuck
+
+### Report Missing Transcript
+
+- Broadcasts updates via Socket.IO WebSockets### 2. Configure Environment
+
+The report API now includes the full conversation transcript. If transcript is missing:
+
+- Ensure the meeting is completed- Checks for natural conclusion points
+
+- Check backend logs for report generation errors
+
+- Verify conversation data exists using `node check-conversation.js [meetingId]`---- 🤝 Conflict resolution and compromise building A²MP (Asynchronous AI Meeting Platform) enables structured virtual meetings where AI personas represent different stakeholders. Participants submit their inputs once, then AI agents discuss the topic in real-time, collaborate, ask questions, and work toward consensus completely autonomously.
+
+
+
+### No Report Generated### 3. Smart Turn-Taking
+
+
+
+Check the report:Moderator uses priority logic:```bash
+
+```bash
+
+node check-report.js [meetingId]1. **Direct Questions**: If AI asks another AI a question, let them respond
+
+```
+
+2. **First-Time Speakers**: Give everyone a chance before repeating# Copy the example file
+
+Verify meeting status is "completed" and review server logs for errors.
+
+3. **Alternation**: Prefer switching speakers (A→B→A→B)
+
+## Production Deployment
+
+4. **Free Choice**: Any speaker if no constraintscp backend/.env.example backend/.env
+
+### Security Checklist
+
+
+
+- Change `HOST_PASSWORD` to a strong password
+
+- Set a unique `JWT_SECRET` (32+ random characters)  ### 4. Collaboration Features```## Quick Start- 📊 Asynchronous brainstorming and ideation
+
+- Use HTTPS for all connections
+
+- Configure CORS properly for your domainAI personas are instructed to:
+
+- Rotate API keys regularly
+
+- Build on others' ideas
+
+### Build and Deploy
+
+- Find common ground and compromise  
+
+Build the project:
+
+```bash- Make concessions when appropriateEdit `backend/.env` with your API keys:
+
+npm run build
+
+```- Propose integrated solutions
+
+
+
+Start the production server:- Support valid points from others```env
+
+```bash
+
+npm run start- Avoid repetition and circular arguments
+
+```
+
+GEMINI_API_KEY=your-api-key-here### Prerequisites### Repository layout
+
+### Database Backup
+
+## Configuration
+
+Create daily backups:
+
+```bashGEMINI_MODERATOR_API_KEY=your-moderator-api-key-here
+
+cp backend/backend/data/a2mp.db backups/a2mp-backup-$(date +%Y%m%d).db
+
+```Create `backend/.env` with your settings. See `backend/.env.example` for a complete template.
+
+
+
+## Development```- Node.js 20+
+
+
+
+### Available Scripts### Required Settings
+
+
+
+Run both backend and frontend:
+
+```bash
+
+npm run dev```bash
+
+```
+
+# Google Gemini API Keys (REQUIRED)### 3. Run Development Server- Google Gemini API Key ([Get one here](https://makersuite.google.com/app/apikey))**Key Features:**
+
+Build for production:
+
+```bashGEMINI_API_KEY=your-api-key-here
+
+npm run build  
+
+```GEMINI_MODERATOR_API_KEY=your-moderator-api-key-here
+
+
+
+Start production build:```
+
+```bash
+
+npm run start```bash
+
+```
+
+### Server Configuration
+
+Format code with Prettier:
+
+```bashnpm run dev
+
+npm run format
+
+``````bash
+
+
+
+### Code StructurePORT=4000```### Installation- ✅ AI personas generated from participant inputs**Perfect for:**- `backend/`: Express API + Socket.IO realtime + conversation engine, SQLite persistence
+
+
+
+- `backend/src/services/` - Business logicCORS_ORIGIN=http://localhost:5174
+
+- `backend/src/llm/` - Gemini integration
+
+- `backend/src/realtime.ts` - Socket.IO real-time system```
+
+- `nextjs-frontend/app/` - Next.js 14 app router pages
+
+- `nextjs-frontend/components/` - Reusable UI components
+
+- `check-*.js` - Debugging utilities
+
+### Host AuthenticationThis starts:
+
+## Tech Stack
+
+
+
+- **Backend**: Node.js, Express, TypeScript, SQLite
+
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS```bash- 🔧 Backend API on http://localhost:4000
+
+- **Real-time**: Socket.IO WebSockets
+
+- **AI**: Google Gemini 2.5 FlashHOST_PASSWORD=your-secure-password
+
+- **Database**: SQLite with better-sqlite3
+
+JWT_SECRET=your-jwt-secret-key- 🎨 Frontend UI on http://localhost:5174```bash- ✅ Natural conversational flow with turn-taking
+
+## Rate Limiting
+
+```
+
+Dual API key system for better quota management:
+
+
+
+- **Participant Key**: Persona generation/responses (250 req/day)
+
+- **Moderator Key**: Turn decisions/conclusions (250 req/day)  ### AI Model Settings
+
+- **Total**: 500+ requests per day
+
+- **Per Key**: 10 RPM, 250K TPM, 250 RPD### 4. Create Your First Meetinggit clone <your-repo-url>
+
+
+
+## License```bash
+
+
+
+Proprietary. Evaluation only. See `LICENSE` for details.GEMINI_MODEL=gemini-2.5-flash
+
+
+
+## CreditsENGINE_TICK_MS=15000
+
+
+
+Built with Google Gemini API, Express, React, Next.js, Socket.IO, Vite, TypeScript, and better-sqlite3.MAX_TURNS_PER_MEETING=101. Open http://localhost:5174cd Asynchronous-AI-Meeting-Platform- ✅ Automatic pause when human input needed- 🗳️ Distributed decision-making across time zones- `frontend/`: Vite + React UI that proxies to `backend`
+
+
+
+---```
+
+
+
+**Made with ❤️ for asynchronous collaboration**2. Log in as host (default password: `password`)
 
 ### Email (Optional)
 
@@ -1145,576 +1609,99 @@ Built with Google Gemini API, Express, React, Next.js, Socket.IO, Vite, TypeScri
 - Verify meeting status is "completed"4. **Free Choice**: Any speaker if no constraints# At minimum, set:SMTP_PORT=587
 
 
-
----
-
-
-
-## Production Deployment### 4. Collaboration# - GEMINI_API_KEYSMTP_USER=
-
-
-
-**Security:**AI personas are instructed to:
-
-- Change `HOST_PASSWORD` to strong password
-
-- Set unique `JWT_SECRET` (32+ characters)- Build on others' ideas# - GEMINI_MODERATOR_API_KEY (or use same as above)SMTP_PASS=
-
-- Use HTTPS
-
-- Configure CORS for your domain- Find common ground and compromise
-
-- Rotate API keys regularly
-
-- Make concessions when appropriate```MAIL_FROM=a2mp@example.com
-
-**Build:**
-
-```bash- Propose integrated solutions
-
-npm run build
-
-npm run start- Support valid points from others
-
-```
-
-
-
-**Database Backup:**
-
-```bash---### 3. Run Development Server# Engine
-
-cp backend/backend/data/a2mp.db backups/a2mp-$(date +%Y%m%d).db
-
-```
-
-
-
----## Configuration```bashENGINE_TICK_MS=8000
-
-
-
-## Development
-
-
-
-**Scripts:**Create `backend/.env` with your settings. See `backend/.env.example` for a complete template.npm run dev```
-
+=======
 ```bash
-
-npm run dev     # Run backend + frontend
-
-npm run build   # Build for production
-
-npm run start   # Start production### Required Settings```Notes:
-
-npm run format  # Format with Prettier
-
+npm run dev
 ```
 
+* Backend: [http://localhost:4000](http://localhost:4000)
+* Frontend: [http://localhost:5174](http://localhost:5174)
 
+### 5. Create Your First Meeting
 
-**Structure:**```bash- Email settings are optional in development. Without SMTP, invites are logged.
-
-- `backend/src/services/` - Business logic
-
-- `backend/src/llm/` - Gemini integration# Google Gemini API Keys (REQUIRED)
-
-- `frontend/src/pages/` - UI components
-
-- `check-*.js` - Debugging utilitiesGEMINI_API_KEY=your-api-key-hereThis starts:- Default `HOST_PASSWORD` is `password` if not set; change it for anything public.
-
-
-
----GEMINI_MODERATOR_API_KEY=your-moderator-api-key-here
-
-
-
-## Tech Stack```- 🔧 Backend API on `http://localhost:4000`
-
-
-
-- **Backend**: Node.js, Express, TypeScript, SQLite
-
-- **Frontend**: React, TypeScript, Vite
-
-- **AI**: Google Gemini 2.5 Flash### Server Configuration- 🎨 Frontend UI on `http://localhost:5174`### Develop
-
-- **Real-time**: Server-Sent Events + polling
-
-
+1. Open [http://localhost:5174](http://localhost:5174)
+2. Log in as host (default password: `password`)
+3. Create a meeting and add participants
+4. Share participant links
+5. Each participant submits inputs
+6. Watch AI personas discuss and reach consensus
 
 ---
 
-```bashFrom the repo root:
+## How It Works
 
-## Rate Limiting
+### 1. Persona Generation
 
-PORT=4000
+Each participant’s submission generates an AI persona with:
 
-Dual API key system provides better quota management:
+* Identity and communication style
+* Objectives and priorities
+* Model Context Protocol (MCP) instructions
 
-- **Participant Key**: Persona generation/responses (250 req/day)CORS_ORIGIN=http://localhost:5174### 4. Create Your First Meeting```bash
+### 2. Conversation Engine
 
-- **Moderator Key**: Turn decisions/conclusions (250 req/day)
+Runs every 15 seconds:
 
-- **Total**: 500+ requests per day```
+* Moderator decides next speaker
+* AI persona responds
+* Detects repetition or completion
+* Pauses when human input is needed
 
-- **Limits**: 10 RPM, 250K TPM, 250 RPD per key
+### 3. Smart Turn-Taking
 
-1. Open `http://localhost:5174`npm run dev
+1. **Direct Questions:** If an AI asks another a question, that AI responds next.
+2. **First-Time Speakers:** Everyone speaks before any repetition.
+3. **Alternation:** Prefers A → B → A → B patterns.
+4. **Free Choice:** Random speaker if no constraints.
+
+### 4. Collaboration Logic
+
+AI personas are instructed to:
+
+* Build on others’ ideas
+* Find common ground and compromise
+* Make concessions when appropriate
+* Propose integrated solutions
+>>>>>>> 79e53290a585ba334eb8e4ff5fabb98058e43c69
 
 ---
-
-### Host Authentication
-
-## License
-
-2. Log in as host (default password: `password`)```
-
-Proprietary. Evaluation only. See `LICENSE` for details.
-
-```bash
-
----
-
-HOST_PASSWORD=your-secure-password3. Create a meeting with 2 participantsThis runs:
-
-Built with Google Gemini API, Express, React, Vite, TypeScript, and better-sqlite3.
-
-JWT_SECRET=your-jwt-secret-key
-
-```4. Share participant links- Backend on `http://localhost:4000`
-
-
-
-### AI Model Settings5. Submit inputs as participants- Frontend on `http://localhost:5173`
-
-
-
-```bash6. Watch the AI conversation unfold!
-
-GEMINI_MODEL=gemini-2.5-flash
-
-ENGINE_TICK_MS=15000Open the frontend, use “Host Login” with your `HOST_PASSWORD`, create a meeting, and share participant links from the UI. The engine advances turns automatically and produces a report.
-
-MAX_TURNS_PER_MEETING=10
-
-```---
-
-
-
-### Email (Optional)### Build and run (production‑like)
-
-
-
-```bash## How It Works```bash
-
-SMTP_HOST=smtp.gmail.com
-
-SMTP_PORT=587# build API and UI bundles
-
-SMTP_USER=your-email@gmail.com
-
-SMTP_PASS=your-app-password### 1. Persona Generationnpm run build
-
-MAIL_FROM=noreply@yourdomain.com
-
-```When a participant submits input, the system:# start only the backend API (serve your frontend separately)
-
-
-
-See full configuration details in the `.env.example` file.- Analyzes their perspective and prioritiesnpm run start
-
-
-
----- Generates a unique AI persona with identity, objectives, and communication style```
-
-
-
-## Usage Guide- Creates Model Context Protocol (MCP) instructions for the persona
-
-
-
-### Creating a Meeting### Data storage
-
-
-
-1. Log in as host### 2. Conversation Engine- SQLite database file for this implementation is created under `backend/backend/data/a2mp.db`.
-
-2. Enter meeting subject and context
-
-3. Add participant emailsThe engine runs on a timer (default: every 15 seconds):
-
-4. Click "Create Meeting & Invite"
-
-5. Participants submit via unique links- Checks for meetings in "running" status---
-
-6. Meeting starts automatically
-
-- Calls moderator to decide next speaker
-
-### Watching Live
-
-- Generates AI response from selected persona## Option B: Run server + web (alternative)
-
-- **Host View**: See all turns, whiteboard, inject messages
-
-- **Participant View**: Watch conversation after submission, inject when paused- Detects repetition patterns and pauses if stuckUse this pair if you prefer the consolidated API in `server/` and a separate `web/` UI.
-
-
-
-### Human Interjection- Checks for natural conclusion points
-
-
-
-- Meetings pause when conversation gets stuck### Install
-
-- Host or participants can inject guidance
-
-- Meeting resumes automatically after input### 3. Smart Turn-Taking```bash
-
-
-
----Moderator uses priority logic:npm install --prefix server
-
-
-
-## API Endpoints1. **Direct Questions**: If AI asks another AI a question, let them respondnpm install --prefix web
-
-
-
-### Meetings2. **First-Time Speakers**: Give everyone a chance before repeating```
-
-
-
-- `POST /api/meetings` - Create meeting3. **Alternation**: Prefer switching speakers (A→B→A→B)
-
-- `GET /api/meetings/:id/status` - Get status with conversation
-
-- `POST /api/meetings/:id/inject` - Inject human message4. **Free Choice**: Any speaker if no constraints### Configure environment
-
-- `POST /api/meetings/:id/advance` - Advance one turn (host)
-
-Create `server/.env`:
-
-### Participants
-
-### 4. Collaboration```bash
-
-- `GET /api/participant?token=xxx` - Get participant details
-
-- `POST /api/participant/submit` - Submit inputAI personas are instructed to:PORT=8080
-
-
-
-### Authentication- Build on others' ideasWEB_ORIGIN=http://localhost:5173
-
-
-
-- `POST /api/auth/host/login` - Host login- Find common ground and compromiseBASE_URL=http://localhost:8080
-
-
-
-### Real-time- Make concessions when appropriate
-
-
-
-- `GET /api/meetings/:id/stream` - SSE for live updates- Propose integrated solutionsGEMINI_API_KEY=your-gemini-api-key
-
-
-
----- Support valid points from others
-
-
-
-## Debugging ToolsSMTP_HOST=
-
-
-
-```bash---SMTP_PORT=587
-
-# View conversation
-
-node check-conversation.js [meetingId]SMTP_USER=
-
-
-
-# View report## ConfigurationSMTP_PASS=
-
-node check-report.js [meetingId]
-
-MAIL_FROM=no-reply@a2mp.local
-
-# List meetings
-
-node list-meetings.js## Configuration
-
-
-
-# View databaseCreate `backend/.env` with your settings. See `backend/.env.example` for a complete template.
-
-node check-db.js
-
-```
-
-# Check quota
-
-node check-quota.jsCreate `web/.env` (optional; defaults shown):
-
-```
-
-### Required Settings```bash
-
----
-
-```bashVITE_API_BASE=http://localhost:8080
-
-## Troubleshooting
-
-# Google Gemini API Keys (REQUIRED)```
-
-### Meeting Not Starting
-
-GEMINI_API_KEY=your-api-key-here
-
-- Ensure all participants submitted
-
-- Check: `node list-meetings.js`GEMINI_MODERATOR_API_KEY=your-moderator-api-key-here### Develop
-
-- Verify engine logs (every 15 seconds)
-
-```In two terminals:
-
-### API Key Issues
-
-```bash
-
-- Verify keys at [Google AI Studio](https://makersuite.google.com/app/apikey)
-
-- Check quota: `node check-quota.js`### Server Configurationnpm run dev --prefix server
-
-- Both keys must be set
-
-```bashnpm run dev --prefix web
-
-### Personas Repeating
-
-PORT=4000```
-
-- Anti-repetition mechanisms included
-
-- Try more diverse inputsCORS_ORIGIN=http://localhost:5174- API on `http://localhost:8080`
-
-- Check conversation: `node check-conversation.js`
-
-```- Web UI on `http://localhost:5173`
-
-### No Report Generated
-
-
-
-- Check: `node check-report.js [meetingId]`
-
-- Verify meeting status is "completed"### Host Authentication### Data storage
-
-- Review server logs
-
-```bash- SQLite database file for this implementation is created under `server/data/a2mp.sqlite`.
-
----
-
-HOST_PASSWORD=your-secure-password
-
-## Production Deployment
-
-JWT_SECRET=your-jwt-secret-key---
-
-### Security
-
-```
-
-- Change `HOST_PASSWORD` to strong password
-
-- Set unique `JWT_SECRET`## Common scripts
-
-- Use HTTPS
-
-- Configure CORS properly### AI Model SettingsFrom the repo root:
-
-- Rotate API keys regularly
-
-```bash- `npm run dev`: run `backend` and `frontend` together (concurrently)
-
-### Build
-
-GEMINI_MODEL=gemini-2.5-flash- `npm run start`: start only the `backend` API
-
-```bash
-
-npm run buildENGINE_TICK_MS=15000- `npm run build`: build `backend` and `frontend`
-
-npm run start
-
-```MAX_TURNS_PER_MEETING=10- `npm run format`: format repo with Prettier
-
-
-
-### Database Backup```
-
-
-
-```bashProject packages also expose their own `dev`, `build`, and `start` scripts.
-
-cp backend/backend/data/a2mp.db backups/a2mp-$(date +%Y%m%d).db
-
-```### Email (Optional)
-
-
-
----```bash## Notes and tips
-
-
-
-## DevelopmentSMTP_HOST=smtp.gmail.com- Frontend (`frontend/`) uses a Vite dev proxy to `/api` → `http://localhost:4000` and `/socket.io` for realtime.
-
-
-
-### ScriptsSMTP_PORT=587- The alternative `web/` UI targets the `server/` API and uses `VITE_API_BASE` to choose the backend origin.
-
-
-
-```bashSMTP_USER=your-email@gmail.com- For production, set strong values for `HOST_PASSWORD` and `JWT_SECRET`, and configure SMTP if you want email delivery.
-
-npm run dev          # Run backend + frontend
-
-npm run build        # Build for productionSMTP_PASS=your-app-password
-
-npm run start        # Start production build
-
-npm run format       # Format with PrettierMAIL_FROM=noreply@yourdomain.com## License
-
-```
-
-```This software is proprietary and provided for demonstration/evaluation only. See `LICENSE` for details.
-
-### Code Structure
-
-
-
-- `backend/src/services/` - Business logicSee full configuration details in the `.env.example` file.
-
-- `backend/src/llm/` - Gemini integration
-
-- `frontend/src/pages/` - UI components---
-
-- `check-*.js` - Debugging utilities
-
-## Usage Guide
-
----
-
-### Creating a Meeting
-
-## Tech Stack
-
-1. Log in as host
-
-- **Backend**: Node.js, Express, TypeScript, SQLite2. Enter meeting subject and context
-
-- **Frontend**: React, TypeScript, Vite3. Add participant emails
-
-- **AI**: Google Gemini 2.5 Flash4. Click "Create Meeting & Invite"
-
-- **Real-time**: Server-Sent Events + polling5. Participants submit via unique links
-
-6. Meeting starts automatically
-
----
-
-### Watching Live
-
-## Rate Limiting
-
-- **Host View**: See all turns, whiteboard, inject messages
-
-Dual API key system for better quota management:- **Participant View**: Watch conversation after submission, inject when paused
-
-
-
-- **Participant Key**: Persona generation/responses (250 req/day)### Human Interjection
-
-- **Moderator Key**: Turn decisions/conclusions (250 req/day)
-
-- **Total**: 500+ requests per day- Meetings pause when conversation gets stuck
-
-- **Per Key**: 10 RPM, 250K TPM, 250 RPD- Host or participants can inject guidance
-
-- Meeting resumes automatically after input
-
----
-
----
-
-## License
 
 ## API Endpoints
 
-Proprietary. Evaluation only. See `LICENSE` for details.
-
 ### Meetings
 
----- `POST /api/meetings` - Create meeting
-
-- `GET /api/meetings/:id/status` - Get status with conversation
-
-## Credits- `POST /api/meetings/:id/inject` - Inject human message
-
-- `POST /api/meetings/:id/advance` - Advance one turn (host)
-
-Built with Google Gemini API, Express, React, Vite, TypeScript, and better-sqlite3.
+| Method | Endpoint                    | Description                         |
+| ------ | --------------------------- | ----------------------------------- |
+| POST   | `/api/meetings`             | Create a new meeting                |
+| GET    | `/api/meetings/:id/status`  | Get meeting and conversation status |
+| POST   | `/api/meetings/:id/inject`  | Inject a human message              |
+| POST   | `/api/meetings/:id/advance` | Advance one AI turn                 |
 
 ### Participants
 
----- `GET /api/participant?token=xxx` - Get participant details
-
-- `POST /api/participant/submit` - Submit input
-
-**Made with ❤️ for asynchronous collaboration**
+| Method | Endpoint                     | Description              |
+| ------ | ---------------------------- | ------------------------ |
+| GET    | `/api/participant?token=xxx` | Get participant details  |
+| POST   | `/api/participant/submit`    | Submit participant input |
 
 ### Authentication
-- `POST /api/auth/host/login` - Host login
 
-### Real-time
-- `GET /api/meetings/:id/stream` - SSE for live updates
+* `POST /api/auth/host/login` — Host login
+
+### Real-Time
+
+* `GET /api/meetings/:id/stream` — Live meeting stream (SSE)
 
 ---
 
 ## Debugging Tools
 
-View conversation:
 ```bash
-node check-conversation.js [meetingId]
-```
-
-View report:
-```bash
-node check-report.js [meetingId]
-```
-
-List meetings:
-```bash
-node list-meetings.js
-```
-
-View database:
-```bash
-node check-db.js
-```
-
-Check quota:
-```bash
-node check-quota.js
+node check-conversation.js [meetingId]  # View conversation
+node check-report.js [meetingId]        # View report
+node list-meetings.js                   # List meetings
+node check-db.js                        # Inspect database
+node check-quota.js                     # Check API quota
 ```
 
 ---
@@ -1723,41 +1710,35 @@ node check-quota.js
 
 ### Meeting Not Starting
 
-Check that all participants have submitted:
-```bash
-node list-meetings.js
-```
+* Ensure all participants submitted
+* Run:
 
-Verify engine logs run every 15 seconds in the terminal.
+  ```bash
+  node list-meetings.js
+  ```
 
 ### API Key Issues
 
-Verify your keys at [Google AI Studio](https://makersuite.google.com/app/apikey)
-
-Check quota:
-```bash
-node check-quota.js
-```
-
-Both keys must be set in your `.env` file.
+* Validate keys at [Google AI Studio](https://makersuite.google.com/app/apikey)
+* Both keys must be present in `.env`
 
 ### Personas Repeating
 
-Anti-repetition mechanisms are included. If personas still repeat, try:
-- More diverse participant inputs
-- Check conversation history:
+* Try more diverse participant inputs
+* Check conversation:
+
   ```bash
   node check-conversation.js
   ```
 
 ### No Report Generated
 
-Check the report:
-```bash
-node check-report.js [meetingId]
-```
+* Run:
 
-Verify meeting status is "completed" and review server logs for errors.
+  ```bash
+  node check-report.js [meetingId]
+  ```
+* Ensure meeting status is `completed`
 
 ---
 
@@ -1765,96 +1746,48 @@ Verify meeting status is "completed" and review server logs for errors.
 
 ### Security Checklist
 
-- Change `HOST_PASSWORD` to a strong password
-- Set a unique `JWT_SECRET` (32+ random characters)
-- Use HTTPS for all connections
-- Configure CORS properly for your domain
-- Rotate API keys regularly
+* Change `HOST_PASSWORD` and `JWT_SECRET`
+* Use HTTPS
+* Restrict `CORS_ORIGIN` to your domain
+* Rotate API keys periodically
 
-### Build and Deploy
+### Build & Deploy
 
-Build the project:
 ```bash
 npm run build
-```
-
-Start the production server:
-```bash
 npm run start
 ```
 
 ### Database Backup
 
-Create daily backups:
 ```bash
-cp backend/backend/data/a2mp.db backups/a2mp-backup-$(date +%Y%m%d).db
+cp backend/backend/data/a2mp.db backups/a2mp-$(date +%Y%m%d).db
 ```
 
 ---
 
-## Development
+## Development Scripts
 
-### Available Scripts
-
-Run both backend and frontend:
 ```bash
-npm run dev
+npm run dev     # Run backend + frontend (dev)
+npm run build   # Build for production
+npm run start   # Start production server
+npm run format  # Format with Prettier
 ```
-
-Build for production:
-```bash
-npm run build
-```
-
-Start production build:
-```bash
-npm run start
-```
-
-Format code with Prettier:
-```bash
-npm run format
-```
-
-### Code Structure
-
-- `backend/src/services/` - Business logic
-- `backend/src/llm/` - Gemini integration
-- `frontend/src/pages/` - UI components
-- `check-*.js` - Debugging utilities
 
 ---
 
 ## Tech Stack
 
-- **Backend**: Node.js, Express, TypeScript, SQLite
-- **Frontend**: React, TypeScript, Vite
-- **AI**: Google Gemini 2.5 Flash
-- **Real-time**: Server-Sent Events + polling
-
----
-
-## Rate Limiting
-
-Dual API key system for better quota management:
-
-- **Participant Key**: Persona generation/responses (250 req/day)
-- **Moderator Key**: Turn decisions/conclusions (250 req/day)
-- **Total**: 500+ requests per day
-- **Per Key**: 10 RPM, 250K TPM, 250 RPD
+* **Backend:** Node.js, Express, TypeScript, SQLite
+* **Frontend:** React, TypeScript, Vite
+* **AI:** Google Gemini 2.5 Flash
+* **Realtime:** Server-Sent Events (SSE) + Socket.IO
 
 ---
 
 ## License
 
-Proprietary. Evaluation only. See `LICENSE` for details.
+Proprietary software — evaluation only.
+See [`LICENSE`](./LICENSE) for details.
 
----
-
-## Credits
-
-Built with Google Gemini API, Express, React, Vite, TypeScript, and better-sqlite3.
-
----
-
-**Made with ❤️ for asynchronous collaboration**
