@@ -17,7 +17,9 @@ export function fromJson<T>(text: string): T {
 }
 
 export function createParticipantUrl(baseUrl: string, token: string): string {
-  const url = new URL(baseUrl);
-  url.searchParams.set("token", token);
-  return url.toString();
+  // Ensure baseUrl ends with a slash for proper URL construction
+  const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  
+  // Create path parameter URL to match Next.js route structure /participate/[token]
+  return `${cleanBaseUrl}/${token}`;
 }

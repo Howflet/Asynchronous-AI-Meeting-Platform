@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 
 export function Report() {
   const { id } = useParams();
@@ -8,7 +8,7 @@ export function Report() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await axios.get(`/api/meetings/${id}/report`);
+      const { data } = await api.get(`/api/meetings/${id}/report`);
       setData(data);
     })();
   }, [id]);

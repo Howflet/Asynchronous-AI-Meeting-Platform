@@ -43,7 +43,7 @@ export async function ensurePersonasForMeeting(meeting: Meeting): Promise<Person
     config: moderatorConfig,
     createdAt: now()
   };
-  db.prepare("INSERT INTO personas (id, meetingId, participantId, role, name, mcp, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)")
+  db.prepare("INSERT INTO personas (id, meetingId, participantId, role, name, config, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)")
     .run(moderator.id, moderator.meetingId, moderator.participantId, moderator.role, moderator.name, toJson(moderator.config), moderator.createdAt);
 
   // Return moderator immediately; personas will be generated in background
@@ -57,7 +57,7 @@ function rowToPersona(row: any): Persona {
     participantId: row.participantId,
     role: row.role,
     name: row.name,
-    config: fromJson<PersonaConfig>(row.mcp),
+    config: fromJson<PersonaConfig>(row.config),
     createdAt: row.createdAt
   };
 }
@@ -89,8 +89,8 @@ export function appendTurn(meetingId: string, speaker: string, message: string, 
  * input breaks the pattern and the conversation should continue.
  */
 function detectRepetitiveConversation(history: ConversationTurn[]): { isRepetitive: boolean; reason?: string } {
-  // Lowered from 6 to 4 - detect issues earlier
-  if (history.length < 4) {
+  // Increased to 6 - allow more natural conversation before checking for repetition
+  if (history.length < 6) {
     return { isRepetitive: false };
   }
   
@@ -140,12 +140,12 @@ function detectRepetitiveConversation(history: ConversationTurn[]): { isRepetiti
   }
   
   // Check for speaker ping-pong - same two speakers going back and forth
-  // Lowered from 6 to 4 AI turns - detect ping-pong faster
-  if (aiTurns.length >= 4) {
-    const speakers = aiTurns.slice(-4).map(t => t.speaker);
+  // Increased to 6 AI turns - only detect true ping-pong after sustained alternation
+  if (aiTurns.length >= 6) {
+    const speakers = aiTurns.slice(-6).map(t => t.speaker);
     const uniqueSpeakers = new Set(speakers);
     
-    // If only 2 speakers in last 4 AI turns, they're likely in a debate loop
+    // If only 2 speakers in last 6 AI turns, they're likely in a debate loop
     if (uniqueSpeakers.size === 2) {
       // Additional check: are they truly alternating?
       let alternating = true;
@@ -166,15 +166,18 @@ function detectRepetitiveConversation(history: ConversationTurn[]): { isRepetiti
   }
   
   // Check for similar message lengths (suggests formulaic responses)
-  if (messages.length >= 3) {
-    const recentLengths = messages.slice(-3).map(m => m.length);
+  // RELAXED: Only trigger if we have 5+ messages AND they're extremely similar (within 15%)
+  // AND we have other indicators of repetition
+  if (messages.length >= 5) {
+    const recentLengths = messages.slice(-5).map(m => m.length);
     const avgLength = recentLengths.reduce((a, b) => a + b, 0) / recentLengths.length;
-    const allSimilar = recentLengths.every(len => Math.abs(len - avgLength) < avgLength * 0.3);
+    const extremelySimilar = recentLengths.every(len => Math.abs(len - avgLength) < avgLength * 0.15);
     
-    if (allSimilar) {
+    // Only flag as repetitive if BOTH similar lengths AND we have repeated phrases
+    if (extremelySimilar && highFrequencyPhrases.length >= 1) {
       return {
         isRepetitive: true,
-        reason: `AI responses following similar pattern - conversation may be stuck`
+        reason: `AI responses following extremely similar pattern with repeated phrases - conversation may be stuck`
       };
     }
   }
@@ -307,18 +310,18 @@ export async function runOneTurn(meeting: Meeting, pendingHumanInjections: { aut
       console.log('[ConversationService] Concluding after moderator selected "none"');
       return { concluded: true, moderatorNotes: decision.moderatorNotes };
     } else {
-      // If we have VERY few turns (< 5) and moderator already wants to stop, 
+      // If we have VERY few turns (< 8) and moderator already wants to stop, 
       // the meeting likely can't proceed due to insufficient input - force conclusion
-      // Increased from 3 to 5 to allow more discussion
-      if (turnCount < 5) {
+      // Increased from 5 to 8 to allow more substantial discussion
+      if (turnCount < 8) {
         console.log(`[ConversationService] Very few turns (<5) and moderator selected "none" - forcing conclusion to prevent loop`);
         return { concluded: true, moderatorNotes: 'Insufficient information to proceed - forcing conclusion' };
       }
       
       // If more turns exist but still not ready to conclude, allow more discussion
-      // Only force conclusion if we have 12+ turns and moderator wants to stop
-      // Increased from 8 to 12 to ensure thorough discussion
-      if (turnCount >= 12) {
+      // Only force conclusion if we have 15+ turns and moderator wants to stop
+      // Increased from 12 to 15 to ensure thorough discussion
+      if (turnCount >= 15) {
         console.log('[ConversationService] 12+ turns and moderator selected "none" - forcing conclusion');
         return { concluded: true, moderatorNotes: 'Conversation concluded by moderator' };
       }
@@ -407,7 +410,7 @@ export async function runOneTurn(meeting: Meeting, pendingHumanInjections: { aut
       createdAt: now()
     };
     
-    db.prepare("INSERT INTO personas (id, meetingId, participantId, role, name, mcp, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    db.prepare("INSERT INTO personas (id, meetingId, participantId, role, name, config, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)")
       .run(newPersona.id, newPersona.meetingId, newPersona.participantId, newPersona.role, newPersona.name, toJson(newPersona.config), newPersona.createdAt);
     
     speaker = newPersona;
@@ -451,9 +454,9 @@ export async function attemptConclusion(meeting: Meeting) {
   if (!moderator) return { conclude: false, reason: "Moderator missing" };
   const history = getHistory(meeting.id);
   
-  // MINIMUM TURN REQUIREMENT: Require at least 7 turns before allowing conclusion
+  // MINIMUM TURN REQUIREMENT: Require at least 10 turns before allowing conclusion
   // This ensures meaningful discussion happens before ending
-  const MIN_TURNS_BEFORE_CONCLUSION = 7;
+  const MIN_TURNS_BEFORE_CONCLUSION = 10;
   if (history.length < MIN_TURNS_BEFORE_CONCLUSION) {
     console.log(`[ConversationService] Only ${history.length} turns - need at least ${MIN_TURNS_BEFORE_CONCLUSION} before conclusion`);
     return { conclude: false, reason: `Need ${MIN_TURNS_BEFORE_CONCLUSION - history.length} more turns` };
@@ -482,7 +485,7 @@ export async function attemptConclusion(meeting: Meeting) {
     return { conclude: false, reason: "Generation errors detected" };
   }
   
-  return await checkForConclusion(fromJson<PersonaConfig>(moderator.mcp), meeting.whiteboard, history);
+  return await checkForConclusion(fromJson<PersonaConfig>(moderator.config), meeting.whiteboard, history);
 }
 
 export async function generateFinalReport(meeting: Meeting) {

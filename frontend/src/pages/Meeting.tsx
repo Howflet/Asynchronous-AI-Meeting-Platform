@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 import { io } from 'socket.io-client';
 
 export function Meeting() {
@@ -20,18 +20,20 @@ export function Meeting() {
     socket.on('status', (p: any) => setStatus(p.status));
     socket.on('whiteboard', (wb: any) => setWhiteboard(wb));
     socket.on('turn', (turn: any) => setHistory((h) => [...h, { speaker: turn.speaker, message: turn.message, createdAt: turn.createdAt }]));
-    return () => socket.close();
+    return () => {
+      socket.close();
+    };
   }, [id]);
 
   async function load() {
-    const { data } = await axios.get(`/api/meetings/${id}/status`);
+    const { data } = await api.get(`/api/meetings/${id}/status`);
     setStatus(data.status);
     setWhiteboard(data.whiteboard);
     setHistory(data.history);
   }
 
   async function inject() {
-    await axios.post(`/api/meetings/${id}/inject`, { author, message: msg });
+    await api.post(`/api/meetings/${id}/inject`, { author, message: msg });
     setMsg('');
   }
 

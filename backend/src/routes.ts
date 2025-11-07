@@ -48,6 +48,12 @@ app.post("/api/meetings", requireHost, async (req, res) => {
   const { subject, details, participants, participantBaseUrl } = parse.data;
   const meeting = createMeeting(subject, details, participants);
 
+  // Generate invitation links
+  const invitationLinks = meeting.participants.map(p => ({
+    email: p.email,
+    link: createParticipantUrl(participantBaseUrl, p.token)
+  }));
+
   // Send emails
   for (const p of meeting.participants) {
     const url = createParticipantUrl(participantBaseUrl, p.token);
@@ -58,7 +64,13 @@ app.post("/api/meetings", requireHost, async (req, res) => {
     }
   }
 
-  res.json({ id: meeting.id, subject: meeting.subject, details: meeting.details, participants: meeting.participants.map(p => ({ id: p.id, email: p.email })) });
+  res.json({ 
+    id: meeting.id, 
+    subject: meeting.subject, 
+    details: meeting.details, 
+    participants: meeting.participants.map(p => ({ id: p.id, email: p.email })),
+    invitationLinks 
+  });
 });
 
 // Participant landing via token
@@ -67,7 +79,25 @@ app.get("/api/participant", (req, res) => {
   if (!token) return res.status(400).json({ error: "Missing token" });
   const participant = getParticipantByToken(token);
   if (!participant) return res.status(404).json({ error: "Invalid link" });
-  res.json({ id: participant.id, meetingId: participant.meetingId, email: participant.email, hasSubmitted: participant.hasSubmitted, subject: participant.meetingSubject, details: participant.meetingDetails });
+  
+  // Get full meeting data
+  const meeting = getMeeting(participant.meetingId);
+  
+  // Structure response to match frontend expectations
+  res.json({ 
+    participant: {
+      id: participant.id,
+      email: participant.email,
+      name: participant.email, // Use email as name fallback
+      hasSubmitted: participant.hasSubmitted
+    },
+    meeting: {
+      id: participant.meetingId,
+      subject: participant.meetingSubject,
+      details: participant.meetingDetails,
+      status: meeting.status
+    }
+  });
 });
 
 // Submit participant input
@@ -105,6 +135,37 @@ app.post("/api/participant/submit", async (req, res) => {
   }
 
   res.json({ ok: true, inputId: input.id });
+});
+
+// Participant message injection
+const ParticipantInjectSchema = z.object({ 
+  token: z.string(), 
+  message: z.string().min(1) 
+});
+app.post("/api/participant/inject", (req, res) => {
+  const parse = ParticipantInjectSchema.safeParse(req.body);
+  if (!parse.success) return res.status(400).json({ error: parse.error.message });
+  
+  const participant = getParticipantByToken(parse.data.token);
+  if (!participant) return res.status(404).json({ error: "Invalid token" });
+  
+  const meeting = getMeeting(participant.meetingId);
+  
+  // Human interjections from participants should be labeled as Human with their email
+  const speaker = `Human:${participant.email}`;
+  console.log(`[Routes] Human interjection from participant: ${participant.email}`);
+  
+  const turn = appendTurn(participant.meetingId, speaker, parse.data.message);
+  broadcastTurn(participant.meetingId, turn);
+  
+  // If meeting was paused (waiting for human input), resume it automatically
+  if (meeting.status === "paused") {
+    console.log(`[Routes] Meeting ${participant.meetingId} was paused - resuming after human input`);
+    db.prepare("UPDATE meetings SET status = ? WHERE id = ?").run("running", participant.meetingId);
+    broadcastStatus(participant.meetingId, "running");
+  }
+  
+  res.json({ ok: true });
 });
 
 // Get conversation status
@@ -180,6 +241,57 @@ app.post("/api/meetings/:id/advance", requireHost, async (req, res) => {
     return res.json({ concluded: true, report });
   }
   res.json({ ...result });
+});
+
+// Get all meetings
+app.get("/api/meetings", requireHost, (req, res) => {
+  const meetings = db.prepare("SELECT id, subject, details, status, createdAt FROM meetings ORDER BY createdAt DESC").all() as any[];
+  
+  // Add participant count and submission status for each meeting
+  const meetingsWithParticipants = meetings.map((meeting: any) => {
+    const participants = db.prepare("SELECT id, email, hasSubmitted FROM participants WHERE meetingId = ?").all(meeting.id);
+    return {
+      ...meeting,
+      participants: participants || []
+    };
+  });
+  
+  res.json(meetingsWithParticipants);
+});
+
+// Get single meeting
+app.get("/api/meetings/:id", requireHost, (req, res) => {
+  const meeting = getMeeting(req.params.id);
+  res.json(meeting);
+});
+
+// Get conversation history
+app.get("/api/meetings/:id/conversation", (req, res) => {
+  const history = getHistory(req.params.id);
+  res.json(history);
+});
+
+// Get whiteboard data
+app.get("/api/meetings/:id/whiteboard", (req, res) => {
+  const meeting = getMeeting(req.params.id);
+  res.json(meeting.whiteboard);
+});
+
+// Start meeting
+app.post("/api/meetings/:id/start", requireHost, (req, res) => {
+  const meeting = getMeeting(req.params.id);
+  if (meeting.status === "completed") return res.status(400).json({ error: "Meeting already completed" });
+  
+  // Only start if all participants have submitted
+  if (!haveAllSubmitted(meeting.id)) {
+    return res.status(400).json({ error: "Not all participants have submitted input" });
+  }
+  
+  // Set to running
+  db.prepare("UPDATE meetings SET status = 'running' WHERE id = ?").run(meeting.id);
+  broadcastStatus(meeting.id, "running");
+  
+  res.json({ success: true });
 });
 
 // Get report if exists

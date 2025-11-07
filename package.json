@@ -3,13 +3,16 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "concurrently -k -n BACKEND,FRONTEND -c blue,magenta \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "dev": "concurrently -k -n BACKEND,NEXTJS -c blue,magenta \"npm run dev --prefix backend\" \"npm run dev --prefix nextjs-frontend\"",
     "start": "npm run start --prefix backend",
-    "build": "npm run build --prefix backend && npm run build --prefix frontend",
+    "build": "npm run build --prefix backend && npm run build --prefix nextjs-frontend",
     "format": "prettier -w \"**/*.{ts,tsx,js,json,css,md}\""
   },
   "devDependencies": {
     "concurrently": "^9.0.1",
     "prettier": "^3.3.3"
+  },
+  "dependencies": {
+    "cloudflared": "^0.7.1"
   }
 }

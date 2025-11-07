@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 interface ConversationTurn {
   id: string;
@@ -33,7 +33,7 @@ export function Host() {
     
     const fetchConversation = async () => {
       try {
-        const { data } = await axios.get(`/api/meetings/${meetingId}/status`);
+        const { data } = await api.get(`/api/meetings/${meetingId}/status`);
         setConversation(data.history || []);
         setStatus(data.status);
         setWhiteboard(data.whiteboard || { keyFacts: [], decisions: [], actionItems: [] });
@@ -51,13 +51,13 @@ export function Host() {
   }, [meetingId, token]);
 
   async function login() {
-    const { data } = await axios.post('/api/auth/login', { password });
+    const { data } = await api.post('/api/auth/login', { password });
     setToken(data.token);
   }
 
   async function createMeeting() {
     if (!token) return;
-    const { data } = await axios.post(
+    const { data } = await api.post(
       '/api/meetings',
       {
         subject,
@@ -77,7 +77,7 @@ export function Host() {
   async function fetchInviteLinks(meetingId: string) {
     if (!token) return;
     try {
-      const { data } = await axios.get(`/api/meetings/${meetingId}/participants`, {
+      const { data } = await api.get(`/api/meetings/${meetingId}/participants`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const links = data.participants.map((p: any) => ({
@@ -92,26 +92,26 @@ export function Host() {
 
   async function pause() {
     if (!token || !meetingId) return;
-    const { data } = await axios.post(`/api/meetings/${meetingId}/pause`, {}, { headers: { Authorization: `Bearer ${token}` } });
+    const { data } = await api.post(`/api/meetings/${meetingId}/pause`, {}, { headers: { Authorization: `Bearer ${token}` } });
     setStatus(data.status);
   }
 
   async function resume() {
     if (!token || !meetingId) return;
-    const { data } = await axios.post(`/api/meetings/${meetingId}/resume`, {}, { headers: { Authorization: `Bearer ${token}` } });
+    const { data } = await api.post(`/api/meetings/${meetingId}/resume`, {}, { headers: { Authorization: `Bearer ${token}` } });
     setStatus(data.status);
   }
 
   async function advance() {
     if (!token || !meetingId) return;
-    const { data } = await axios.post(`/api/meetings/${meetingId}/advance`, {}, { headers: { Authorization: `Bearer ${token}` } });
+    const { data } = await api.post(`/api/meetings/${meetingId}/advance`, {}, { headers: { Authorization: `Bearer ${token}` } });
     if (data.concluded) alert('Meeting concluded and report generated');
   }
 
   async function injectMessage() {
     if (!meetingId || !humanMessage.trim()) return;
     try {
-      await axios.post(`/api/meetings/${meetingId}/inject`, {
+      await api.post(`/api/meetings/${meetingId}/inject`, {
         author: 'Host',
         message: humanMessage
       });

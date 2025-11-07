@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 interface ConversationTurn {
   id: string;
@@ -47,7 +47,7 @@ export function Participant() {
     
     const interval = setInterval(async () => {
       try {
-        const { data } = await axios.get(`/api/meetings/${details.id}/status`);
+        const { data } = await api.get(`/api/meetings/${details.id}/status`);
         setMeetingStatus(data.status);
         setConversation(data.history || []);
         setWhiteboard(data.whiteboard || { keyFacts: [], decisions: [], actionItems: [] });
@@ -64,7 +64,7 @@ export function Participant() {
       setLoading(true);
       setError('');
       console.log('[Participant] Fetching participant data...');
-      const { data } = await axios.get('/api/participant', { params: { token: t } });
+      const { data } = await api.get('/api/participant', { params: { token: t } });
       console.log('[Participant] Received data:', data);
       setDetails({ subject: data.subject, details: data.details, id: data.meetingId });
       setParticipantEmail(data.email || 'Participant');
@@ -79,7 +79,7 @@ export function Participant() {
 
   async function submit() {
     try {
-      await axios.post('/api/participant/submit', { token, content, name: name.trim() || undefined });
+      await api.post('/api/participant/submit', { token, content, name: name.trim() || undefined });
       setSubmitted(true);
       // Update participantEmail with the submitted name so injection works correctly
       if (name.trim()) {
@@ -94,7 +94,7 @@ export function Participant() {
   async function injectMessage() {
     if (!details?.id || !participantMessage.trim()) return;
     try {
-      await axios.post(`/api/meetings/${details.id}/inject`, {
+      await api.post(`/api/meetings/${details.id}/inject`, {
         author: participantEmail,
         message: participantMessage
       });
