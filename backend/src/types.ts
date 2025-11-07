@@ -37,7 +37,7 @@ export interface Persona {
   participantId?: UUID | null;
   role: "persona" | "moderator";
   name: string;
-  mcp: MCP;
+  config: PersonaConfig;
   createdAt: number;
 }
 
@@ -72,8 +72,8 @@ export interface ConversationGraph {
   edges: { from: string; to: string }[];
 }
 
-// MCP structures
-export interface MCP {
+// Persona Configuration structures  
+export interface PersonaConfig {
   identity: string;
   objectives: string[];
   rules: string[];

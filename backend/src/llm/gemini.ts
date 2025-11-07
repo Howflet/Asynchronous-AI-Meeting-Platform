@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { MCP, Whiteboard, ConversationTurn, ConversationGraph } from "../types.js";
+import { ConversationTurn, Whiteboard, PersonaConfig, ConversationGraph } from "../types.js";
 import { GeminiRateLimiter } from "./rateLimiter.js";
 import { 
   estimateInputTokens, 
@@ -108,8 +108,8 @@ export async function generatePersonaFromInput(
   input: string,
   meetingSubject: string,
   participantName?: string
-): Promise<{ name: string; mcp: MCP }> {
-  const system = `You are to produce a JSON object for an AI Persona's Model Contextual Protocol (MCP). 
+): Promise<{ name: string; config: PersonaConfig }> {
+  const system = `You are to produce a JSON object for an AI Persona's configuration. 
 IMPORTANT: Return ONLY valid JSON, no markdown, no code blocks, no explanations.
 Keep descriptions brief (under 30 words each). Limit to 3-4 objectives and 3-4 rules.`;
   
@@ -128,7 +128,7 @@ ${participantName ? `Use "${participantName}" as the persona name.` : 'Create a 
 Return ONLY this JSON (no markdown, keep it concise):
 {
   "name": "${participantName || 'PersonaName'}",
-  "mcp": {
+  "config": {
     "identity": "Brief description (under 30 words)",
     "objectives": ["Objective 1", "Objective 2", "Objective 3"],
     "rules": [
@@ -208,18 +208,18 @@ Return ONLY this JSON (no markdown, keep it concise):
             if (!parsed.name || typeof parsed.name !== 'string') {
               throw new Error('Missing or invalid "name" field');
             }
-            if (!parsed.mcp || typeof parsed.mcp !== 'object') {
-              throw new Error('Missing or invalid "mcp" field');
+            if (!parsed.config || typeof parsed.config !== 'object') {
+              throw new Error('Missing or invalid "config" field');
             }
-            if (!parsed.mcp.identity || !Array.isArray(parsed.mcp.objectives) || !Array.isArray(parsed.mcp.rules) || !parsed.mcp.outputFormat) {
-              throw new Error('Invalid MCP structure - missing required fields');
+            if (!parsed.config.identity || !Array.isArray(parsed.config.objectives) || !Array.isArray(parsed.config.rules) || !parsed.config.outputFormat) {
+              throw new Error('Invalid config structure - missing required fields');
             }
             
-            return { name: parsed.name, mcp: parsed.mcp as MCP };
+            return { name: parsed.name, config: parsed.config as PersonaConfig };
           } catch (parseError: any) {
             console.error('[Gemini] generatePersonaFromInput parse error:', parseError.message);
             console.error('[Gemini] Raw text:', text);
-            throw new Error(`Failed to parse persona MCP JSON: ${parseError.message}`);
+            throw new Error(`Failed to parse persona config JSON: ${parseError.message}`);
           }
         },
         'generatePersonaFromInput',
@@ -232,11 +232,13 @@ Return ONLY this JSON (no markdown, keep it concise):
 }
 
 export async function moderatorDecideNext(
-  moderatorMcp: MCP,
+  moderatorConfig: PersonaConfig,
   whiteboard: Whiteboard,
   history: ConversationTurn[],
   participantOptions: { email: string; participantId: string; hasSpoken: boolean }[],
-  pendingHumanInjections: { author: string; message: string }[]
+  pendingHumanInjections: { author: string; message: string }[],
+  meetingSubject?: string,
+  meetingDetails?: string
 ): Promise<{ nextSpeaker: string; moderatorNotes: string; whiteboardUpdate?: Partial<Whiteboard> }>
 {
   // Compact prompt with essential context
@@ -268,6 +270,13 @@ export async function moderatorDecideNext(
   
   // Build clear instruction with alternation preference
   let instruction = '';
+  
+  // Add meeting context if this is the first turn (empty history)
+  let meetingContext = '';
+  if (history.length === 0 && meetingSubject) {
+    meetingContext = `\n📋 MEETING: "${meetingSubject}"${meetingDetails ? ` - ${meetingDetails.substring(0, 100)}` : ''}\n⚠️ START THE CONVERSATION. Pick someone to speak first.\n`;
+  }
+  
   if (directAddress && hasSpoken.some(email => email.toLowerCase().includes(directAddress.toLowerCase()))) {
     // Priority 1: Direct question - let the addressed person respond
     const addressedPerson = hasSpoken.find(email => email.toLowerCase().includes(directAddress.toLowerCase()));
@@ -286,7 +295,7 @@ export async function moderatorDecideNext(
   }
   
   const user = `Last: ${lastSpeaker}: "${lastMessage.substring(0, 150)}"${humanContext}
-${instruction}
+${meetingContext}${instruction}
 {"nextSpeaker":"email or none","moderatorNotes":"brief","whiteboardUpdate":{"keyFacts":["brief"],"decisions":[],"actionItems":[]}}`;
   
   // Estimate tokens
@@ -376,7 +385,7 @@ ${instruction}
 }
 
 export async function personaRespond(
-  persona: { name: string; mcp: MCP },
+  persona: { name: string; config: PersonaConfig },
   whiteboard: Whiteboard,
   history: ConversationTurn[],
   participantInput?: string
@@ -400,7 +409,7 @@ export async function personaRespond(
     : '';
   
   const prompt = `You: ${persona.name}
-Identity: ${persona.mcp.identity.substring(0, 120)}
+Identity: ${persona.config.identity.substring(0, 120)}
 ${participantInput ? `Your original input: "${participantInput.substring(0, 150)}"` : ''}
 ${yourHistory}
 ${humanContext}
@@ -487,7 +496,7 @@ Max 70 words. Focus on NEW CONTRIBUTIONS not repetition.`;
 }
 
 export async function checkForConclusion(
-  moderatorMcp: MCP,
+  moderatorConfig: PersonaConfig,
   whiteboard: Whiteboard,
   history: ConversationTurn[]
 ): Promise<{ conclude: boolean; reason: string }>
@@ -500,7 +509,7 @@ Keep your reason under 50 words.`;
   const recentHistory = history.slice(-3);
   
   const user = `Check if meeting objectives are met.
-MCP Objectives: ${JSON.stringify(moderatorMcp.objectives || [])}
+Config Objectives: ${JSON.stringify(moderatorConfig.objectives || [])}
 Whiteboard Key Facts: ${JSON.stringify(whiteboard.keyFacts?.slice(0, 5) || [])}
 Whiteboard Decisions: ${JSON.stringify(whiteboard.decisions?.slice(0, 5) || [])}
 Recent Turns: ${recentHistory.length}

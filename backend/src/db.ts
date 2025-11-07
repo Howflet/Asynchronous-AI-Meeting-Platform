@@ -41,7 +41,7 @@ export function initDb() {
       participantId TEXT,
       role TEXT NOT NULL,
       name TEXT NOT NULL,
-      mcp TEXT NOT NULL,
+      config TEXT NOT NULL,
       createdAt INTEGER NOT NULL,
       FOREIGN KEY(meetingId) REFERENCES meetings(id) ON DELETE CASCADE
     );
@@ -66,4 +66,19 @@ export function initDb() {
       FOREIGN KEY(meetingId) REFERENCES meetings(id) ON DELETE CASCADE
     );
   `);
+
+  // Migration: Rename 'mcp' column to 'config' if it exists
+  try {
+    const columns = db.pragma("table_info(personas)") as Array<{ name: string }>;
+    const hasMcpColumn = columns.some((col) => col.name === 'mcp');
+    const hasConfigColumn = columns.some((col) => col.name === 'config');
+    
+    if (hasMcpColumn && !hasConfigColumn) {
+      console.log("[DB] Migrating personas table: renaming 'mcp' column to 'config'");
+      db.exec(`ALTER TABLE personas RENAME COLUMN mcp TO config;`);
+      console.log("[DB] Migration completed successfully");
+    }
+  } catch (error) {
+    console.warn("[DB] Migration warning:", error);
+  }
 }

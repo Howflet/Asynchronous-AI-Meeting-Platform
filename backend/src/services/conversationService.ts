@@ -1,6 +1,6 @@
 import { db } from "../db.js";
 import { generateId, now, toJson, fromJson } from "../util.js";
-import { Meeting, ConversationTurn, Persona, MCP, Whiteboard } from "../types.js";
+import { Meeting, ConversationTurn, Persona, PersonaConfig, Whiteboard } from "../types.js";
 import { generatePersonaFromInput, moderatorDecideNext, personaRespond, checkForConclusion, summarizeConversation } from "../llm/gemini.js";
 import { getInputsForMeeting } from "./participantService.js";
 import { broadcastStatus, broadcastTurn, broadcastWhiteboard } from "../realtimeBus.js";
@@ -16,7 +16,7 @@ export async function ensurePersonasForMeeting(meeting: Meeting): Promise<Person
   console.log(`[ConversationService] Meeting ${meeting.id} will use lazy persona generation (on-demand)`);
 
   // Create moderator persona immediately (doesn't require LLM call)
-  const moderatorMcp: MCP = {
+  const moderatorConfig: PersonaConfig = {
     identity: "Meeting Moderator - Efficient Decision Engine",
     objectives: [
       "Guide conversation toward meeting objectives",
@@ -40,11 +40,11 @@ export async function ensurePersonasForMeeting(meeting: Meeting): Promise<Person
     participantId: null,
     role: "moderator",
     name: "Moderator",
-    mcp: moderatorMcp,
+    config: moderatorConfig,
     createdAt: now()
   };
   db.prepare("INSERT INTO personas (id, meetingId, participantId, role, name, mcp, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)")
-    .run(moderator.id, moderator.meetingId, moderator.participantId, moderator.role, moderator.name, toJson(moderator.mcp), moderator.createdAt);
+    .run(moderator.id, moderator.meetingId, moderator.participantId, moderator.role, moderator.name, toJson(moderator.config), moderator.createdAt);
 
   // Return moderator immediately; personas will be generated in background
   return [moderator];
@@ -57,7 +57,7 @@ function rowToPersona(row: any): Persona {
     participantId: row.participantId,
     role: row.role,
     name: row.name,
-    mcp: fromJson<MCP>(row.mcp),
+    config: fromJson<PersonaConfig>(row.mcp),
     createdAt: row.createdAt
   };
 }
@@ -258,11 +258,13 @@ export async function runOneTurn(meeting: Meeting, pendingHumanInjections: { aut
   });
 
   const decision = await moderatorDecideNext(
-    moderator.mcp,
+    moderator.config,
     whiteboard,
     history,
     participantOptions,
-    pendingHumanInjections
+    pendingHumanInjections,
+    meeting.subject,
+    meeting.details
   );
 
   // Log moderator's decision for debugging
@@ -282,6 +284,17 @@ export async function runOneTurn(meeting: Meeting, pendingHumanInjections: { aut
     broadcastWhiteboard(meeting.id, updated);
   }
 
+  // DEFENSIVE CHECK: Never allow "none" when history is empty - moderator lacks context for initial speaker selection
+  // This prevents the critical Bug #1 where meetings conclude with 0 turns
+  if (decision.nextSpeaker.toLowerCase() === "none" && history.length === 0 && participantOptions.length > 0) {
+    console.warn('[ConversationService] Bug #1 Prevention: Moderator selected "none" with empty history - forcing first speaker selection');
+    console.warn('[ConversationService] Available participants:', participantOptions.map(p => p.email).join(', '));
+    // Pick first participant who hasn't spoken yet
+    const firstParticipant = participantOptions.find(p => !p.hasSpoken) || participantOptions[0];
+    decision.nextSpeaker = firstParticipant.email;
+    console.log(`[ConversationService] Overriding to: ${decision.nextSpeaker}`);
+  }
+
   if (decision.nextSpeaker.toLowerCase() === "none") {
     console.log('[ConversationService] Moderator selected "none" - checking for conclusion');
     
@@ -294,17 +307,19 @@ export async function runOneTurn(meeting: Meeting, pendingHumanInjections: { aut
       console.log('[ConversationService] Concluding after moderator selected "none"');
       return { concluded: true, moderatorNotes: decision.moderatorNotes };
     } else {
-      // If we have VERY few turns (< 3) and moderator already wants to stop, 
+      // If we have VERY few turns (< 5) and moderator already wants to stop, 
       // the meeting likely can't proceed due to insufficient input - force conclusion
-      if (turnCount < 3) {
-        console.log('[ConversationService] Very few turns (<3) and moderator selected "none" - forcing conclusion to prevent loop');
+      // Increased from 3 to 5 to allow more discussion
+      if (turnCount < 5) {
+        console.log(`[ConversationService] Very few turns (<5) and moderator selected "none" - forcing conclusion to prevent loop`);
         return { concluded: true, moderatorNotes: 'Insufficient information to proceed - forcing conclusion' };
       }
       
-      // If more turns exist, check if conversation has stalled (no new turns in recent checks)
-      // Force conclusion if we're clearly stuck
-      if (turnCount >= 8) {
-        console.log('[ConversationService] 8+ turns and moderator selected "none" - forcing conclusion');
+      // If more turns exist but still not ready to conclude, allow more discussion
+      // Only force conclusion if we have 12+ turns and moderator wants to stop
+      // Increased from 8 to 12 to ensure thorough discussion
+      if (turnCount >= 12) {
+        console.log('[ConversationService] 12+ turns and moderator selected "none" - forcing conclusion');
         return { concluded: true, moderatorNotes: 'Conversation concluded by moderator' };
       }
       
@@ -376,7 +391,7 @@ export async function runOneTurn(meeting: Meeting, pendingHumanInjections: { aut
     const participantName = selectedOption.email || 'Participant';
     
     // Generate persona using Gemini
-    const { name, mcp } = await generatePersonaFromInput(input.content, meeting.subject, participantName);
+    const { name, config } = await generatePersonaFromInput(input.content, meeting.subject, participantName);
     
     // Ensure unique persona name by appending participant name if needed
     const uniqueName = name.includes(participantName) ? name : `${name} (${participantName})`;
@@ -388,12 +403,12 @@ export async function runOneTurn(meeting: Meeting, pendingHumanInjections: { aut
       participantId: selectedOption.participantId,
       role: "persona",
       name: uniqueName,
-      mcp,
+      config,
       createdAt: now()
     };
     
     db.prepare("INSERT INTO personas (id, meetingId, participantId, role, name, mcp, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)")
-      .run(newPersona.id, newPersona.meetingId, newPersona.participantId, newPersona.role, newPersona.name, toJson(newPersona.mcp), newPersona.createdAt);
+      .run(newPersona.id, newPersona.meetingId, newPersona.participantId, newPersona.role, newPersona.name, toJson(newPersona.config), newPersona.createdAt);
     
     speaker = newPersona;
     // Add to personas array so it's available for next lookup
@@ -408,7 +423,7 @@ export async function runOneTurn(meeting: Meeting, pendingHumanInjections: { aut
     participantInput = input?.content;
   }
 
-  const msg = await personaRespond({ name: speaker.name, mcp: speaker.mcp }, meeting.whiteboard, history, participantInput);
+  const msg = await personaRespond({ name: speaker.name, config: speaker.config }, meeting.whiteboard, history, participantInput);
   
   // Check if message is empty or too short - indicates a generation problem
   if (!msg || msg.trim().length < 10) {
@@ -436,6 +451,29 @@ export async function attemptConclusion(meeting: Meeting) {
   if (!moderator) return { conclude: false, reason: "Moderator missing" };
   const history = getHistory(meeting.id);
   
+  // MINIMUM TURN REQUIREMENT: Require at least 7 turns before allowing conclusion
+  // This ensures meaningful discussion happens before ending
+  const MIN_TURNS_BEFORE_CONCLUSION = 7;
+  if (history.length < MIN_TURNS_BEFORE_CONCLUSION) {
+    console.log(`[ConversationService] Only ${history.length} turns - need at least ${MIN_TURNS_BEFORE_CONCLUSION} before conclusion`);
+    return { conclude: false, reason: `Need ${MIN_TURNS_BEFORE_CONCLUSION - history.length} more turns` };
+  }
+  
+  // CONCLUSION CRITERIA: Check if whiteboard has substantive content
+  // Meetings should have at least some decisions or action items before concluding
+  const hasDecisions = meeting.whiteboard.decisions && meeting.whiteboard.decisions.length > 0;
+  const hasActionItems = meeting.whiteboard.actionItems && meeting.whiteboard.actionItems.length > 0;
+  const hasKeyFacts = meeting.whiteboard.keyFacts && meeting.whiteboard.keyFacts.length >= 3;
+  
+  // At least one of these should be true for a productive meeting
+  const hasSubstantiveContent = hasDecisions || hasActionItems || hasKeyFacts;
+  
+  if (!hasSubstantiveContent && history.length < 10) {
+    console.log(`[ConversationService] Whiteboard lacks substantive content - need more discussion`);
+    console.log(`[ConversationService] Decisions: ${meeting.whiteboard.decisions?.length || 0}, Actions: ${meeting.whiteboard.actionItems?.length || 0}, Facts: ${meeting.whiteboard.keyFacts?.length || 0}`);
+    return { conclude: false, reason: "Need decisions, action items, or more key facts" };
+  }
+  
   // Don't attempt conclusion if recent messages are empty (indicates generation problems)
   const recentMessages = history.slice(-5);
   const emptyCount = recentMessages.filter(m => !m.message || m.message.trim().length < 10).length;
@@ -444,7 +482,7 @@ export async function attemptConclusion(meeting: Meeting) {
     return { conclude: false, reason: "Generation errors detected" };
   }
   
-  return await checkForConclusion(fromJson<MCP>(moderator.mcp), meeting.whiteboard, history);
+  return await checkForConclusion(fromJson<PersonaConfig>(moderator.mcp), meeting.whiteboard, history);
 }
 
 export async function generateFinalReport(meeting: Meeting) {

@@ -6,7 +6,7 @@
 import { generatePersonaFromInput } from "./gemini.js";
 import { db } from "../db.js";
 import { generateId, now, toJson } from "../util.js";
-import { Persona, MCP } from "../types.js";
+import { Persona, PersonaConfig } from "../types.js";
 
 interface PersonaGenerationJob {
   meetingId: string;
@@ -119,7 +119,7 @@ export class PersonaQueue {
         );
         
         // Generate persona (goes through rate limiter in gemini.ts)
-        const { name, mcp } = await generatePersonaFromInput(
+        const { name, config } = await generatePersonaFromInput(
           job.input,
           job.meetingSubject
         );
@@ -131,12 +131,12 @@ export class PersonaQueue {
           participantId: job.participantId,
           role: "persona",
           name,
-          mcp,
+          config,
           createdAt: now(),
         };
         
         db.prepare(
-          "INSERT INTO personas (id, meetingId, participantId, role, name, mcp, createdAt) " +
+          "INSERT INTO personas (id, meetingId, participantId, role, name, config, createdAt) " +
           "VALUES (?, ?, ?, ?, ?, ?, ?)"
         ).run(
           persona.id,
@@ -144,7 +144,7 @@ export class PersonaQueue {
           persona.participantId,
           persona.role,
           persona.name,
-          toJson(persona.mcp),
+          toJson(persona.config),
           persona.createdAt
         );
         
