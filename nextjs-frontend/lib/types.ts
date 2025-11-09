@@ -1,6 +1,6 @@
 // Shared TypeScript types for A²MP platform
 
-export type MeetingStatus = "awaiting_inputs" | "running" | "paused" | "completed"
+export type MeetingStatus = "awaiting_inputs" | "running" | "paused" | "completed" | "cancelled"
 
 export interface Participant {
   id?: string
@@ -18,6 +18,7 @@ export interface Meeting {
   status: MeetingStatus
   createdAt: string
   participants: Participant[]
+  pauseReason?: 'host' | 'ai' | null
 }
 
 export interface ConversationTurn {
@@ -38,9 +39,7 @@ export interface MeetingReport {
   id: string
   subject: string
   date: string
-  executiveSummary: string
   highlights: string[]
   decisions: string[]
   actionItems: string[]
-  transcript: ConversationTurn[]
 }

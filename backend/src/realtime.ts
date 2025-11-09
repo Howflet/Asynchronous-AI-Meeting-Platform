@@ -21,6 +21,6 @@ export function createRealtime(server: HttpServer) {
     emitUpdate,
     broadcastTurn: (meetingId: string, turn: any) => emitUpdate(meetingId, "turn", turn),
     broadcastWhiteboard: (meetingId: string, whiteboard: any) => emitUpdate(meetingId, "whiteboard", whiteboard),
-    broadcastStatus: (meetingId: string, status: string) => emitUpdate(meetingId, "status", { status })
+    broadcastStatus: (meetingId: string, status: string, pauseReason?: string | null) => emitUpdate(meetingId, "status", { status, pauseReason })
   };
 }

@@ -8,9 +8,9 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Plus, X, Copy, Check, Clock, Eye } from "lucide-react"
-import { createMeeting, getMeetings } from "@/lib/api"
-import type { Meeting } from "@/lib/types"
+import { Plus, X, Copy, Check, Clock, Eye, Trash2 } from "lucide-react"
+import { createMeeting, getMeetings, deleteMeeting } from "@/lib/api"
+import type { Meeting, Participant } from "@/lib/types"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
@@ -28,8 +28,11 @@ export default function HostPage() {
   const [details, setDetails] = useState("")
   const [participants, setParticipants] = useState([{ email: "", name: "" }])
   const [createdMeeting, setCreatedMeeting] = useState<{
-    meeting: Meeting
-    participants: Array<{ token: string; email: string; name?: string }>
+    id: string
+    subject: string
+    details: string
+    participants: Participant[]
+    invitationLinks: Array<{ email: string; link: string }>
   } | null>(null)
   const [copiedTokens, setCopiedTokens] = useState<Set<string>>(new Set())
 
@@ -104,17 +107,30 @@ export default function HostPage() {
     setParticipants(updated)
   }
 
-  const copyInvitationLink = (token: string) => {
-    const link = `${window.location.origin}/p?token=${token}`
+  const copyInvitationLink = (link: string) => {
     navigator.clipboard.writeText(link)
-    setCopiedTokens((prev) => new Set(prev).add(token))
+    setCopiedTokens((prev) => new Set(prev).add(link))
     setTimeout(() => {
       setCopiedTokens((prev) => {
         const newSet = new Set(prev)
-        newSet.delete(token)
+        newSet.delete(link)
         return newSet
       })
     }, 2000)
+  }
+
+  const handleDeleteMeeting = async (meetingId: string, meetingSubject: string) => {
+    if (!confirm(`⚠️ DELETE MEETING?\n\n"${meetingSubject}"\n\nThis will permanently delete this meeting and all its data including:\n• All conversation history\n• Meeting reports\n• Participant data\n• Whiteboards\n\nThis action CANNOT be undone!\n\nAre you absolutely sure?`)) {
+      return
+    }
+    
+    try {
+      await deleteMeeting(meetingId)
+      // Reload meetings list after successful deletion
+      await loadMeetings()
+    } catch (error: any) {
+      alert(error.message || "Failed to delete meeting")
+    }
   }
 
   const resetForm = () => {
@@ -178,23 +194,23 @@ export default function HostPage() {
 
             <div className="space-y-4 mb-8">
               <div className="bg-slate-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-slate-900 mb-2">{createdMeeting.meeting.subject}</h3>
-                <p className="text-sm text-slate-600">{createdMeeting.meeting.details}</p>
+                <h3 className="font-semibold text-slate-900 mb-2">{createdMeeting.subject}</h3>
+                <p className="text-sm text-slate-600">{createdMeeting.details}</p>
               </div>
 
               <div>
                 <h3 className="font-semibold text-slate-900 mb-3">Participant Invitation Links</h3>
                 <div className="space-y-2">
-                  {createdMeeting.participants.map((participant) => (
-                    <div key={participant.token} className="flex items-center gap-2 bg-white p-3 rounded-lg border">
+                  {createdMeeting.invitationLinks.map((invitation, index) => (
+                    <div key={index} className="flex items-center gap-2 bg-white p-3 rounded-lg border">
                       <div className="flex-1">
-                        <p className="font-medium text-sm text-slate-900">{participant.name || participant.email}</p>
+                        <p className="font-medium text-sm text-slate-900">{invitation.email}</p>
                         <p className="text-xs text-slate-500 font-mono break-all">
-                          {window.location.origin}/p?token={participant.token}
+                          {invitation.link}
                         </p>
                       </div>
-                      <Button size="sm" variant="ghost" onClick={() => copyInvitationLink(participant.token)}>
-                        {copiedTokens.has(participant.token) ? (
+                      <Button size="sm" variant="ghost" onClick={() => copyInvitationLink(invitation.link)}>
+                        {copiedTokens.has(invitation.link) ? (
                           <Check className="w-4 h-4 text-green-600" />
                         ) : (
                           <Copy className="w-4 h-4" />
@@ -210,7 +226,7 @@ export default function HostPage() {
               <Button onClick={resetForm} variant="outline" className="flex-1 bg-transparent">
                 Create Another Meeting
               </Button>
-              <Button onClick={() => router.push(`/m/${createdMeeting.meeting.id}`)} className="flex-1">
+              <Button onClick={() => router.push(`/m/${createdMeeting.id}`)} className="flex-1">
                 <Eye className="w-4 h-4 mr-2" />
                 View Live Meeting
               </Button>
@@ -381,6 +397,14 @@ export default function HostPage() {
                       <Link href={`/r/${meeting.id}`}>View Report</Link>
                     </Button>
                   )}
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => handleDeleteMeeting(meeting.id, meeting.subject)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </Card>
             ))}

@@ -232,12 +232,12 @@ export async function runOneTurn(meeting: Meeting, pendingHumanInjections: { aut
     console.warn(`[ConversationService] Pausing meeting ${meeting.id} to request human input`);
     
     // Pause the meeting and add a moderator message explaining the pause
-    db.prepare("UPDATE meetings SET status = ? WHERE id = ?").run("paused", meeting.id);
+    db.prepare("UPDATE meetings SET status = ?, pauseReason = 'ai' WHERE id = ?").run("paused", meeting.id);
     
     const pauseMessage = `🛑 MEETING PAUSED: The conversation appears to be at a crossroads with differing viewpoints. Human participants, please provide your input or guidance to move the discussion forward.`;
     const pauseTurn = appendTurn(meeting.id, "Moderator", pauseMessage);
     broadcastTurn(meeting.id, pauseTurn);
-    broadcastStatus(meeting.id, "paused");
+    broadcastStatus(meeting.id, "paused", "ai");
     
     return { 
       concluded: false, 

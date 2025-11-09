@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast"
 export default function CreateMeetingPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [subject, setSubject] = useState("")
   const [details, setDetails] = useState("")
   const [participants, setParticipants] = useState<Participant[]>([
@@ -28,6 +29,17 @@ export default function CreateMeetingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [invitationLinks, setInvitationLinks] = useState<{ email: string; link: string }[]>([])
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+
+  // Check authentication on mount
+  useEffect(() => {
+    const auth = localStorage.getItem("hostAuthenticated")
+    if (auth === "true") {
+      setIsAuthenticated(true)
+    } else {
+      // Redirect to host login if not authenticated
+      router.push("/host")
+    }
+  }, [router])
 
   const addParticipant = () => {
     setParticipants([...participants, { email: "", name: "" }])
@@ -149,6 +161,17 @@ export default function CreateMeetingPage() {
     ])
     setInvitationLinks([])
     setIsSubmitting(false)
+  }
+
+  // Show loading state while checking authentication
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="text-center">
+          <p className="text-slate-600">Redirecting to login...</p>
+        </div>
+      </div>
+    )
   }
 
   if (invitationLinks && invitationLinks.length > 0) {

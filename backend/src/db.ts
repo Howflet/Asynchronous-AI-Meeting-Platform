@@ -81,4 +81,18 @@ export function initDb() {
   } catch (error) {
     console.warn("[DB] Migration warning:", error);
   }
+
+  // Migration: Add pauseReason column to meetings table if it doesn't exist
+  try {
+    const meetingsColumns = db.pragma("table_info(meetings)") as Array<{ name: string }>;
+    const hasPauseReasonColumn = meetingsColumns.some((col) => col.name === 'pauseReason');
+    
+    if (!hasPauseReasonColumn) {
+      console.log("[DB] Adding pauseReason column to meetings table");
+      db.exec(`ALTER TABLE meetings ADD COLUMN pauseReason TEXT;`);
+      console.log("[DB] pauseReason column added successfully");
+    }
+  } catch (error) {
+    console.warn("[DB] pauseReason migration warning:", error);
+  }
 }

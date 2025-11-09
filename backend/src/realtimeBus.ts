@@ -1,7 +1,7 @@
 type Broadcasters = {
   broadcastTurn: (meetingId: string, turn: unknown) => void;
   broadcastWhiteboard: (meetingId: string, whiteboard: unknown) => void;
-  broadcastStatus: (meetingId: string, status: string) => void;
+  broadcastStatus: (meetingId: string, status: string, pauseReason?: string | null) => void;
 };
 
 const noop = () => {};
@@ -18,13 +18,23 @@ export function setBroadcasters(b: Broadcasters) {
 }
 
 export function broadcastTurn(meetingId: string, turn: unknown) {
-  state.broadcastTurn(meetingId, turn);
+  // Clean speaker names by removing AI:/Human: prefixes before broadcasting
+  const cleanTurn = turn && typeof turn === 'object' && 'speaker' in turn 
+    ? { 
+        ...turn, 
+        speaker: typeof turn.speaker === 'string' 
+          ? turn.speaker.replace(/^(AI:|Human:)\s*/, '').trim() || turn.speaker
+          : turn.speaker 
+      }
+    : turn;
+  
+  state.broadcastTurn(meetingId, cleanTurn);
 }
 
 export function broadcastWhiteboard(meetingId: string, whiteboard: unknown) {
   state.broadcastWhiteboard(meetingId, whiteboard);
 }
 
-export function broadcastStatus(meetingId: string, status: string) {
-  state.broadcastStatus(meetingId, status);
+export function broadcastStatus(meetingId: string, status: string, pauseReason?: string | null) {
+  state.broadcastStatus(meetingId, status, pauseReason);
 }

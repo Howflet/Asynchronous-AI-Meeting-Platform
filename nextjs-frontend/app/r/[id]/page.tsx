@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Loader2, Download, Copy, Check, ChevronDown, ChevronUp, FileText } from "lucide-react"
+import { Loader2, Download, Copy, Check, FileText } from "lucide-react"
 import { getMeetingReport } from "@/lib/api"
 import type { MeetingReport } from "@/lib/types"
 import Link from "next/link"
@@ -15,7 +15,6 @@ export default function ReportPage() {
 
   const [loading, setLoading] = useState(true)
   const [report, setReport] = useState<MeetingReport | null>(null)
-  const [showFullTranscript, setShowFullTranscript] = useState(false)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
@@ -39,9 +38,6 @@ export default function ReportPage() {
     const text = `
 Meeting Report: ${report.subject}
 
-Summary:
-${report.summary}
-
 Key Highlights:
 ${report.highlights.map((h, i) => `${i + 1}. ${h}`).join("\n")}
 
@@ -64,9 +60,6 @@ ${report.actionItems.map((a, i) => `${i + 1}. ${a}`).join("\n")}
 Meeting Report: ${report.subject}
 Generated: ${new Date().toLocaleString()}
 
-Summary:
-${report.summary}
-
 Key Highlights:
 ${report.highlights.map((h, i) => `${i + 1}. ${h}`).join("\n")}
 
@@ -75,9 +68,6 @@ ${report.decisions.map((d, i) => `${i + 1}. ${d}`).join("\n")}
 
 Action Items:
 ${report.actionItems.map((a, i) => `${i + 1}. ${a}`).join("\n")}
-
-Full Transcript:
-${report.transcript}
     `.trim()
 
     const blob = new Blob([text], { type: "text/plain" })
@@ -131,11 +121,7 @@ ${report.transcript}
           </div>
         </div>
 
-        {/* Summary */}
-        <Card className="p-6 mb-6">
-          <h2 className="text-2xl font-semibold text-slate-900 mb-4">Executive Summary</h2>
-          <p className="text-slate-700 leading-relaxed">{report.summary}</p>
-        </Card>
+
 
         {/* Highlights */}
         {report.highlights && report.highlights.length > 0 && (
@@ -182,26 +168,7 @@ ${report.transcript}
           </Card>
         )}
 
-        {/* Full Transcript */}
-        {report.transcript && (
-          <Card className="p-6">
-            <button
-              onClick={() => setShowFullTranscript(!showFullTranscript)}
-              className="w-full flex items-center justify-between text-left"
-            >
-              <h2 className="text-2xl font-semibold text-slate-900">Full Transcript</h2>
-              {showFullTranscript ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-            </button>
 
-            {showFullTranscript && (
-              <div className="mt-4 pt-4 border-t">
-                <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans leading-relaxed">
-                  {report.transcript}
-                </pre>
-              </div>
-            )}
-          </Card>
-        )}
       </div>
     </div>
   )

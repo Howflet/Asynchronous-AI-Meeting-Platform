@@ -3,8 +3,9 @@ export type UUID = string;
 export type MeetingStatus =
   | "awaiting_inputs"
   | "running"
-  | "paused"
-  | "completed";
+  | "paused" 
+  | "completed"
+  | "cancelled";
 
 export interface Meeting {
   id: UUID;
@@ -13,6 +14,7 @@ export interface Meeting {
   createdAt: number;
   status: MeetingStatus;
   whiteboard: Whiteboard;
+  pauseReason?: 'host' | 'ai' | null;
 }
 
 export interface Participant {

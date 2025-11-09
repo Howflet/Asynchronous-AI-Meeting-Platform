@@ -15,11 +15,13 @@ import {
   AlertCircle,
   Play,
   Pause,
+  Square,
   FastForward,
   MessageSquare,
   FileText,
+  Trash2,
 } from "lucide-react"
-import { getMeetingStatus, injectMessage, startMeeting, pauseMeeting, resumeMeeting, advanceMeeting } from "@/lib/api"
+import { getMeetingStatus, injectMessage, startMeeting, pauseMeeting, resumeMeeting, advanceMeeting, endMeeting, deleteMeeting } from "@/lib/api"
 import type { Meeting, ConversationTurn } from "@/lib/types"
 import Link from "next/link"
 
@@ -28,6 +30,7 @@ export default function MeetingLivePage() {
   const meetingId = params.id as string
 
   const [loading, setLoading] = useState(true)
+  const [isHost, setIsHost] = useState(false)
   const [meeting, setMeeting] = useState<Meeting | null>(null)
   const [conversation, setConversation] = useState<ConversationTurn[]>([])
   const [personas, setPersonas] = useState<any[]>([])
@@ -37,10 +40,14 @@ export default function MeetingLivePage() {
   const [sender, setSender] = useState("")
   const [sending, setSending] = useState(false)
 
-  const conversationEndRef = useRef<HTMLDivElement>(null)
-  const pollIntervalRef = useRef<NodeJS.Timeout>()
+
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
+    // Check if user is authenticated as host
+    const hostAuth = localStorage.getItem("hostAuthenticated")
+    setIsHost(hostAuth === "true")
+    
     loadMeetingData()
 
     // Poll every 5 seconds for updates
@@ -53,16 +60,35 @@ export default function MeetingLivePage() {
     }
   }, [meetingId])
 
-  useEffect(() => {
-    conversationEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [conversation])
+
 
   const loadMeetingData = async () => {
     try {
       const data = await getMeetingStatus(meetingId)
+      console.log('API Response:', data) // Debug log
+      
       setMeeting(data.meeting)
-      setConversation(data.conversation)
-      setPersonas(data.personas || [])
+      
+      // Ensure conversation is a proper array of turn objects
+      if (Array.isArray(data.conversation)) {
+        console.log('Conversation data:', data.conversation)
+        const validConversation = data.conversation.filter(turn => {
+          const isValid = turn && 
+                          typeof turn === 'object' && 
+                          typeof turn.speaker === 'string' && 
+                          typeof turn.message === 'string'
+          if (!isValid) {
+            console.warn('Invalid conversation turn:', turn)
+          }
+          return isValid
+        })
+        setConversation(validConversation)
+      } else {
+        console.warn('Conversation is not an array:', data.conversation)
+        setConversation([])
+      }
+      
+      setPersonas(Array.isArray(data.personas) ? data.personas : [])
     } catch (error) {
       console.error("Failed to load meeting:", error)
     } finally {
@@ -122,6 +148,33 @@ export default function MeetingLivePage() {
     }
   }
 
+  const handleEnd = async () => {
+    if (!confirm("Are you sure you want to end this meeting? This will generate the final report and mark the meeting as completed.")) {
+      return
+    }
+    
+    try {
+      await endMeeting(meetingId)
+      await loadMeetingData()
+    } catch (error: any) {
+      alert(error.message || "Failed to end meeting")
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!confirm("⚠️ DELETE MEETING?\n\nThis will permanently delete this meeting and all its data including:\n• All conversation history\n• Meeting reports\n• Participant data\n• Whiteboards\n\nThis action CANNOT be undone!\n\nAre you absolutely sure?")) {
+      return
+    }
+    
+    try {
+      await deleteMeeting(meetingId)
+      // Redirect to meetings list after successful deletion
+      window.location.href = "/meetings"
+    } catch (error: any) {
+      alert(error.message || "Failed to delete meeting")
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
@@ -167,41 +220,78 @@ export default function MeetingLivePage() {
             </span>
           </div>
 
-          {/* Meeting Controls */}
-          <div className="flex gap-2">
-            {meeting.status === "awaiting_inputs" && (
-              <Button onClick={handleStart} size="sm">
-                <Play className="w-4 h-4 mr-2" />
-                Start Meeting
-              </Button>
-            )}
-            {meeting.status === "running" && (
-              <>
-                <Button onClick={handlePause} size="sm" variant="outline">
-                  <Pause className="w-4 h-4 mr-2" />
-                  Pause
+          {/* Meeting Controls - Only visible to hosts */}
+          {isHost && (
+            <div className="flex gap-2">
+              {meeting.status === "awaiting_inputs" && (
+                <Button onClick={handleStart} size="sm">
+                  <Play className="w-4 h-4 mr-2" />
+                  Start Meeting
                 </Button>
-                <Button onClick={handleAdvance} size="sm" variant="outline">
-                  <FastForward className="w-4 h-4 mr-2" />
-                  Advance Turn
+              )}
+              {meeting.status === "running" && (
+                <>
+                  <Button onClick={handlePause} size="sm" variant="outline">
+                    <Pause className="w-4 h-4 mr-2" />
+                    Pause
+                  </Button>
+                  <Button onClick={handleAdvance} size="sm" variant="outline">
+                    <FastForward className="w-4 h-4 mr-2" />
+                    Advance Turn
+                  </Button>
+                  <Button onClick={handleEnd} size="sm" variant="destructive">
+                    <Square className="w-4 h-4 mr-2" />
+                    End Meeting
+                  </Button>
+                </>
+              )}
+              {meeting.status === "paused" && (
+                <>
+                  <Button onClick={handleResume} size="sm">
+                    <Play className="w-4 h-4 mr-2" />
+                    Resume
+                  </Button>
+                  <Button onClick={handleEnd} size="sm" variant="destructive">
+                    <Square className="w-4 h-4 mr-2" />
+                    End Meeting
+                  </Button>
+                </>
+              )}
+              {meeting.status === "completed" && (
+                <Button asChild size="sm">
+                  <Link href={`/r/${meetingId}`}>
+                    <FileText className="w-4 h-4 mr-2" />
+                    View Report
+                  </Link>
                 </Button>
-              </>
-            )}
-            {meeting.status === "paused" && (
-              <Button onClick={handleResume} size="sm">
-                <Play className="w-4 h-4 mr-2" />
-                Resume
-              </Button>
-            )}
-            {meeting.status === "completed" && (
-              <Button asChild size="sm">
-                <Link href={`/r/${meetingId}`}>
-                  <FileText className="w-4 h-4 mr-2" />
-                  View Report
-                </Link>
-              </Button>
-            )}
-          </div>
+              )}
+              {meeting.status === "cancelled" && (
+                <div className="text-sm text-red-600 font-medium">
+                  ⚠️ This meeting has been cancelled
+                </div>
+              )}
+              
+              {/* Delete button - always available for hosts */}
+              <div className="border-t pt-3 mt-3">
+                <Button 
+                  onClick={handleDelete} 
+                  size="sm" 
+                  variant="ghost" 
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Meeting
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {/* Non-host message for viewing only */}
+          {!isHost && (
+            <p className="text-sm text-slate-600">
+              Viewing as observer. <Link href="/host" className="text-blue-600 hover:underline">Login as host</Link> to control the meeting.
+            </p>
+          )}
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
@@ -220,30 +310,69 @@ export default function MeetingLivePage() {
                     <p>Waiting for conversation to begin...</p>
                   </div>
                 ) : (
-                  conversation.map((turn, index) => (
-                    <div
-                      key={index}
-                      className={`p-4 rounded-lg ${
-                        turn.role === "moderator"
-                          ? "bg-blue-50 border-l-4 border-blue-500"
-                          : turn.role === "human"
-                            ? "bg-green-50 border-l-4 border-green-500"
-                            : "bg-slate-50 border-l-4 border-slate-300"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-semibold text-sm text-slate-900">{turn.speaker}</span>
-                        <span className="text-xs text-slate-500">{turn.role}</span>
+                  conversation
+                    .filter(turn => turn && typeof turn === 'object' && turn.speaker && turn.message)
+                    .map((turn, index) => {
+                    // Ensure speaker is a string
+                    const speakerStr = typeof turn.speaker === 'string' ? turn.speaker : String(turn.speaker)
+                    
+                    // Parse speaker to determine type and clean name
+                    const isModerator = speakerStr === "Moderator" || speakerStr.toLowerCase().includes("moderator")
+                    const isHuman = speakerStr.startsWith('Human:')
+                    const isAI = speakerStr.startsWith('AI:')
+                    
+                    // Extract clean name without AI:/Human: prefixes
+                    let cleanSpeakerName = speakerStr
+                    if (isHuman) {
+                      cleanSpeakerName = speakerStr.replace('Human:', '').trim()
+                    } else if (isAI) {
+                      cleanSpeakerName = speakerStr.replace('AI:', '').trim()
+                    }
+                    
+                    return (
+                      <div
+                        key={turn.id || index}
+                        className={`rounded-lg p-4 shadow-sm border transition-colors ${
+                          isModerator 
+                            ? "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950" 
+                            : isHuman
+                              ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950"
+                              : isAI
+                                ? "border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950"
+                                : "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950"
+                        }`}
+                      >
+                        <div className="mb-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-900 dark:text-slate-100">{String(cleanSpeakerName || 'Unknown')}</span>
+                            {isModerator && (
+                              <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-medium">
+                                Moderator
+                              </span>
+                            )}
+                            {isHuman && (
+                              <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 font-medium">
+                                Human
+                              </span>
+                            )}
+                            {isAI && (
+                              <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 font-medium">
+                                Persona
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                          {String(turn.message || '')}
+                        </div>
                       </div>
-                      <p className="text-slate-700 whitespace-pre-wrap">{turn.content}</p>
-                    </div>
-                  ))
+                    )
+                  })
                 )}
-                <div ref={conversationEndRef} />
               </div>
 
-              {/* Message Injection */}
-              {(meeting.status === "running" || meeting.status === "paused") && (
+              {/* Message Injection - Only for hosts */}
+              {isHost && (meeting.status === "running" || meeting.status === "paused") && (
                 <form onSubmit={handleInjectMessage} className="space-y-3 border-t pt-4">
                   <h3 className="font-medium text-slate-900">Inject Message</h3>
                   <div className="grid grid-cols-3 gap-3">
@@ -283,12 +412,21 @@ export default function MeetingLivePage() {
                 AI Personas ({personas.length})
               </h3>
               <div className="space-y-2">
-                {personas.map((persona, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                    <span className="text-slate-700">{persona.name || `Persona ${index + 1}`}</span>
-                  </div>
-                ))}
+                {personas.map((persona, index) => {
+                  let displayName = `Persona ${index + 1}`
+                  if (typeof persona === 'string') {
+                    displayName = persona
+                  } else if (persona && typeof persona === 'object' && persona.name) {
+                    displayName = String(persona.name)
+                  }
+                  
+                  return (
+                    <div key={persona?.id || index} className="flex items-center gap-2 text-sm">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                      <span className="text-slate-700">{displayName}</span>
+                    </div>
+                  )
+                })}
               </div>
             </Card>
 

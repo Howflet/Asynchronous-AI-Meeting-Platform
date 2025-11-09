@@ -40,6 +40,7 @@ export default function ParticipantLivePage() {
   const [meetingDetails, setMeetingDetails] = useState("")
   const [meetingId, setMeetingId] = useState("")
   const [meetingStatus, setMeetingStatus] = useState<MeetingStatus>("awaiting_inputs")
+  const [pauseReason, setPauseReason] = useState<'host' | 'ai' | null>(null)
   const [conversation, setConversation] = useState<ConversationTurn[]>([])
   const [whiteboard, setWhiteboard] = useState<Whiteboard>({ keyFacts: [], decisions: [], actionItems: [] })
   const [message, setMessage] = useState("")
@@ -87,6 +88,7 @@ export default function ParticipantLivePage() {
       setMeetingDetails(data.meeting.details)
       setMeetingId(data.meeting.id)
       setMeetingStatus(data.meeting.status)
+      setPauseReason(data.meeting.pauseReason || null)
 
       console.log('Participant data loaded:', {
         participant: data.participant.email,
@@ -173,6 +175,7 @@ export default function ParticipantLivePage() {
       console.log('Received meeting status update:', data)
       if (data.status) {
         setMeetingStatus(data.status)
+        setPauseReason(data.pauseReason || null)
         // Also reload conversation when status changes to ensure consistency
         loadConversationData()
       }
@@ -294,15 +297,34 @@ export default function ParticipantLivePage() {
         )}
 
         {meetingStatus === "paused" && (
-          <Card className="mb-6 p-4 bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-800">
+          <Card className={`mb-6 p-4 ${
+            pauseReason === "host" 
+              ? "bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800"
+              : "bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-800"
+          }`}>
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              <AlertCircle className={`h-5 w-5 ${
+                pauseReason === "host"
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-orange-600 dark:text-orange-400"
+              }`} />
               <div>
-                <p className="font-medium text-orange-900 dark:text-orange-100">
-                  Your Input Requested
+                <p className={`font-medium ${
+                  pauseReason === "host"
+                    ? "text-blue-900 dark:text-blue-100"
+                    : "text-orange-900 dark:text-orange-100"
+                }`}>
+                  {pauseReason === "host" ? "Meeting Paused by Host" : "Your Input Requested"}
                 </p>
-                <p className="text-sm text-orange-700 dark:text-orange-300">
-                  The conversation needs human guidance. Use the message box below to contribute.
+                <p className={`text-sm ${
+                  pauseReason === "host"
+                    ? "text-blue-700 dark:text-blue-300"
+                    : "text-orange-700 dark:text-orange-300"
+                }`}>
+                  {pauseReason === "host" 
+                    ? "The meeting has been temporarily paused by the host. Please wait for it to resume."
+                    : "The conversation needs human guidance. Use the message box below to contribute."
+                  }
                 </p>
               </div>
             </div>
@@ -457,7 +479,7 @@ export default function ParticipantLivePage() {
               </div>
 
               {/* Message Input for Paused State */}
-              {meetingStatus === "paused" && (
+              {meetingStatus === "paused" && pauseReason === "ai" && (
                 <div className="border-t border-border bg-muted/30 p-4">
                   <form onSubmit={handleSubmitMessage} className="space-y-3">
                     <p className="text-sm font-medium text-foreground">Add Your Voice to the Conversation</p>

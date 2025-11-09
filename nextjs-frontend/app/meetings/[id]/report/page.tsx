@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { getMeetingReport } from "@/lib/api"
 import type { MeetingReport } from "@/lib/types"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowLeft, Download, Copy, Check, ChevronDown, ChevronRight } from "lucide-react"
+import { ArrowLeft, Download, Copy, Check } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export default function MeetingReportPage() {
@@ -20,7 +20,6 @@ export default function MeetingReportPage() {
   const [report, setReport] = useState<MeetingReport | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isTranscriptOpen, setIsTranscriptOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
@@ -65,9 +64,6 @@ MEETING REPORT
 ${report.subject}
 ${formatDate(report.date)}
 
-EXECUTIVE SUMMARY
-${report.executiveSummary}
-
 KEY HIGHLIGHTS
 ${report.highlights.map((h, i) => `${i + 1}. ${h}`).join("\n")}
 
@@ -76,9 +72,6 @@ ${report.decisions.map((d, i) => `${i + 1}. ${d}`).join("\n")}
 
 ACTION ITEMS
 ${report.actionItems.map((a, i) => `${i + 1}. ${a}`).join("\n")}
-
-FULL TRANSCRIPT
-${report.transcript.map((t) => `[${formatTime(t.createdAt)}] ${t.speaker}: ${t.message}`).join("\n\n")}
     `.trim()
 
     try {
@@ -106,9 +99,6 @@ MEETING REPORT
 ${report.subject}
 ${formatDate(report.date)}
 
-EXECUTIVE SUMMARY
-${report.executiveSummary}
-
 KEY HIGHLIGHTS
 ${report.highlights.map((h, i) => `${i + 1}. ${h}`).join("\n")}
 
@@ -117,9 +107,6 @@ ${report.decisions.map((d, i) => `${i + 1}. ${d}`).join("\n")}
 
 ACTION ITEMS
 ${report.actionItems.map((a, i) => `${i + 1}. ${a}`).join("\n")}
-
-FULL TRANSCRIPT
-${report.transcript.map((t) => `[${formatTime(t.createdAt)}] ${t.speaker}: ${t.message}`).join("\n\n")}
     `.trim()
 
     const blob = new Blob([reportText], { type: "text/plain" })
@@ -203,11 +190,7 @@ ${report.transcript.map((t) => `[${formatTime(t.createdAt)}] ${t.speaker}: ${t.m
             <h2 className="text-2xl font-bold text-foreground">{report.subject}</h2>
           </Card>
 
-          {/* Executive Summary */}
-          <Card className="p-6">
-            <h3 className="mb-4 text-lg font-semibold text-foreground">Executive Summary</h3>
-            <p className="leading-relaxed text-foreground">{report.executiveSummary}</p>
-          </Card>
+
 
           {/* Key Highlights */}
           {report.highlights.length > 0 && (
@@ -260,38 +243,7 @@ ${report.transcript.map((t) => `[${formatTime(t.createdAt)}] ${t.speaker}: ${t.m
             </Card>
           )}
 
-          {/* Full Transcript */}
-          <Card className="p-6">
-            <button
-              onClick={() => setIsTranscriptOpen(!isTranscriptOpen)}
-              className="mb-4 flex w-full items-center justify-between text-lg font-semibold text-foreground"
-            >
-              <span>Full Conversation Transcript</span>
-              {isTranscriptOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-            </button>
 
-            {isTranscriptOpen && (
-              <>
-                <Separator className="mb-4" />
-                <div className="space-y-4">
-                  {report.transcript.map((turn) => (
-                    <div
-                      key={turn.id}
-                      className={`rounded-lg p-4 ${
-                        turn.isModerator ? "border border-primary/20 bg-primary/5" : "border border-border bg-muted/30"
-                      }`}
-                    >
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="font-semibold text-foreground">{turn.speaker}</span>
-                        <span className="text-xs text-muted-foreground">{formatTime(turn.createdAt)}</span>
-                      </div>
-                      <p className="leading-relaxed text-foreground">{turn.message}</p>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </Card>
 
           {/* Actions */}
           <div className="flex flex-col gap-3 sm:flex-row">

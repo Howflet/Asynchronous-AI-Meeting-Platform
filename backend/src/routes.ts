@@ -117,11 +117,6 @@ app.post("/api/participant/submit", async (req, res) => {
     return res.status(400).json({ error: "You have already submitted input for this meeting" });
   }
   
-  // Update participant name if provided
-  if (parse.data.name) {
-    db.prepare("UPDATE participants SET email = ? WHERE id = ?").run(parse.data.name, participant.id);
-  }
-  
   const input = submitParticipantInput(participant.id, parse.data.content);
   broadcastStatus(participant.meetingId, "awaiting_inputs");
 
@@ -171,24 +166,36 @@ app.post("/api/participant/inject", (req, res) => {
 // Get conversation status
 app.get("/api/meetings/:id/status", (req, res) => {
   const meeting = getMeeting(req.params.id);
-  const history = getHistory(meeting.id);
-  res.json({ status: meeting.status, whiteboard: meeting.whiteboard, history });
+  const conversation = getHistory(meeting.id);
+  const personas = db.prepare("SELECT * FROM personas WHERE meetingId = ?").all(meeting.id) as any[];
+  
+  // Clean speaker names by removing AI:/Human: prefixes for the live view
+  const cleanConversation = conversation.map(turn => ({
+    ...turn,
+    speaker: turn.speaker.replace(/^(AI:|Human:)\s*/, '').trim() || turn.speaker
+  }));
+  
+  res.json({ 
+    meeting: meeting,
+    conversation: cleanConversation,
+    personas: personas
+  });
 });
 
 // Host controls: pause/resume
 app.post("/api/meetings/:id/pause", requireHost, (req, res) => {
   const meeting = getMeeting(req.params.id);
   if (meeting.status === "paused") return res.json({ status: meeting.status });
-  db.prepare("UPDATE meetings SET status = 'paused' WHERE id = ?").run(meeting.id);
-  broadcastStatus(meeting.id, "paused");
+  db.prepare("UPDATE meetings SET status = 'paused', pauseReason = 'host' WHERE id = ?").run(meeting.id);
+  broadcastStatus(meeting.id, "paused", "host");
   res.json({ status: "paused" });
 });
 
 app.post("/api/meetings/:id/resume", requireHost, (req, res) => {
   const meeting = getMeeting(req.params.id);
   if (meeting.status !== "paused") return res.json({ status: meeting.status });
-  db.prepare("UPDATE meetings SET status = 'running' WHERE id = ?").run(meeting.id);
-  broadcastStatus(meeting.id, "running");
+  db.prepare("UPDATE meetings SET status = 'running', pauseReason = NULL WHERE id = ?").run(meeting.id);
+  broadcastStatus(meeting.id, "running", null);
   res.json({ status: "running" });
 });
 
@@ -294,13 +301,63 @@ app.post("/api/meetings/:id/start", requireHost, (req, res) => {
   res.json({ success: true });
 });
 
+// End meeting (manually conclude)
+app.post("/api/meetings/:id/end", requireHost, async (req, res) => {
+  try {
+    const meeting = getMeeting(req.params.id);
+    
+    if (meeting.status === "completed") {
+      return res.status(400).json({ error: "Meeting already completed" });
+    }
+    
+    if (meeting.status === "cancelled") {
+      return res.status(400).json({ error: "Cannot end a cancelled meeting" });
+    }
+    
+    if (meeting.status !== "running" && meeting.status !== "paused") {
+      return res.status(400).json({ error: `Can only end running or paused meetings, current status: ${meeting.status}` });
+    }
+    
+    console.log(`[API] Host manually ending meeting ${meeting.id}`);
+    
+    // Generate final report immediately
+    await generateFinalReport(meeting);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error(`[API] Error ending meeting ${req.params.id}:`, error);
+    res.status(500).json({ error: "Failed to end meeting" });
+  }
+});
+
+// Delete meeting (host only)
+app.delete("/api/meetings/:id", requireHost, (req, res) => {
+  try {
+    const meetingId = req.params.id;
+    
+    // Check if meeting exists
+    const meeting = getMeeting(meetingId);
+    if (!meeting) {
+      return res.status(404).json({ error: "Meeting not found" });
+    }
+    
+    console.log(`[API] Host deleting meeting ${meetingId}`);
+    
+    // Delete meeting - cascade will handle all related data automatically
+    db.prepare("DELETE FROM meetings WHERE id = ?").run(meetingId);
+    
+    console.log(`[API] Successfully deleted meeting ${meetingId} and all related data`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error(`[API] Error deleting meeting ${req.params.id}:`, error);
+    res.status(500).json({ error: "Failed to delete meeting" });
+  }
+});
+
 // Get report if exists
 app.get("/api/meetings/:id/report", (req, res) => {
   const row = db.prepare("SELECT * FROM reports WHERE meetingId = ?").get(req.params.id) as any;
   if (!row) return res.status(404).json({ error: "Report not ready" });
-  
-  // Also fetch the conversation transcript
-  const conversation = getHistory(req.params.id);
   
   // Get meeting details for subject and date
   const meeting = getMeeting(req.params.id);
@@ -310,12 +367,9 @@ app.get("/api/meetings/:id/report", (req, res) => {
     meetingId: row.meetingId,
     subject: meeting.subject,
     date: new Date(meeting.createdAt).toISOString(),
-    executiveSummary: row.summary,
     highlights: JSON.parse(row.highlights),
     decisions: JSON.parse(row.decisions),
     actionItems: JSON.parse(row.actionItems),
-    visualMap: JSON.parse(row.visualMap),
-    transcript: conversation,
     createdAt: row.createdAt
   });
 });

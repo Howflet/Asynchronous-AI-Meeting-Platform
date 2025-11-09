@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  a2mp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: a2mp-app
+    ports:
+      - "3000:3000"  # Next.js frontend
+      - "4000:4000"  # Express backend API
+    environment:
+      - NODE_ENV=production
+      - BACKEND_PORT=4000
+      # Meeting Engine Configuration
+      - MAX_TURNS_PER_MEETING=25
+      - ENGINE_TICK_MS=8000
+      # Authentication
+      - HOST_PASSWORD=${HOST_PASSWORD:-12345}
+      # AI Configuration (add your API keys)
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODERATOR_API_KEY=${GEMINI_MODERATOR_API_KEY}
+      # CORS Configuration
+      - CORS_ORIGIN=http://localhost:3000
+      # Rate Limiting (Gemini Free Tier)
+      - RATE_LIMIT_RPM=15
+      - RATE_LIMIT_TPM=1000000
+      - RATE_LIMIT_RPD=1500
+    volumes:
+      # Persist SQLite database
+      - a2mp_data:/app/backend/data
+      - a2mp_data_backend:/app/backend/backend/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget --no-verbose --tries=1 --spider http://localhost:3000 && wget --no-verbose --tries=1 --spider http://localhost:4000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - a2mp-network
+
+volumes:
+  a2mp_data:
+    driver: local
+  a2mp_data_backend:
+    driver: local
+
+networks:
+  a2mp-network:
+    driver: bridge

@@ -165,6 +165,38 @@ export async function advanceMeeting(id: string): Promise<{ success: boolean }> 
 }
 
 /**
+ * End meeting (manually conclude) (requires Bearer auth)
+ * POST /api/meetings/:id/end
+ */
+export async function endMeeting(id: string): Promise<{ success: boolean }> {
+  const response = await authenticatedFetch(`/api/meetings/${id}/end`, {
+    method: "POST",
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to end meeting")
+  }
+
+  return response.json()
+}
+
+/**
+ * Delete meeting permanently (requires Bearer auth)
+ * DELETE /api/meetings/:id
+ */
+export async function deleteMeeting(id: string): Promise<{ success: boolean }> {
+  const response = await authenticatedFetch(`/api/meetings/${id}`, {
+    method: "DELETE",
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to delete meeting")
+  }
+
+  return response.json()
+}
+
+/**
  * Get system status (requires Bearer auth)
  * GET /api/system/status
  */
@@ -293,7 +325,7 @@ export async function injectHumanMessage(
 export async function injectMessage(meetingId: string, message: string, sender: string): Promise<{ success: boolean }> {
   const response = await publicFetch(`/api/meetings/${meetingId}/inject`, {
     method: "POST",
-    body: JSON.stringify({ message, sender }),
+    body: JSON.stringify({ message, author: sender }),
   })
 
   if (!response.ok) {
