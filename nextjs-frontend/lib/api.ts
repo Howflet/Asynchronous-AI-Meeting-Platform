@@ -1,6 +1,7 @@
 import type { Meeting, ConversationTurn, Participant, MeetingReport } from "./types"
 
-const API_URL = process.env.NEXT_PUBLIC_VITE_API_BASE_URL || process.env.VITE_API_BASE_URL || "http://localhost:4000"
+// Use empty string to make all API calls relative to current origin (no CORS issues in monolithic container)
+const API_URL = ""
 const HOST_PASSWORD = process.env.NEXT_PUBLIC_HOST_PASSWORD || "12345"
 
 // Authentication token management
@@ -104,7 +105,7 @@ export async function createMeeting(
       subject, 
       details, 
       participants: participantEmails,
-      participantBaseUrl: `${API_URL.replace('4000', '3000')}/participate`
+      participantBaseUrl: `${window.location.origin}/participate`
     }),
   })
 

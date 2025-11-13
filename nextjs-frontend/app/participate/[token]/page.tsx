@@ -85,7 +85,7 @@ export default function ParticipateInputPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen bg-background py-12 pt-28">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <Card className="p-6 sm:p-8">
             <Skeleton className="mb-4 h-8 w-3/4" />
@@ -100,7 +100,7 @@ export default function ParticipateInputPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen bg-background py-12 pt-28">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <Card className="p-8 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
@@ -118,7 +118,7 @@ export default function ParticipateInputPage() {
     // Redirect to live view if already submitted
     window.location.href = `/participate/${token}/live`
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen bg-background py-12 pt-28">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <Card className="p-8 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
@@ -139,7 +139,7 @@ export default function ParticipateInputPage() {
   const recommendedChars = 100
 
   return (
-    <div className="min-h-screen bg-background py-12">
+    <div className="min-h-screen bg-background py-12 pt-28">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <Card className="p-6 sm:p-8">
           <div className="mb-6">
@@ -206,7 +206,7 @@ export default function ParticipateInputPage() {
               </ul>
             </div>
 
-            <Button type="submit" disabled={isSubmitting || charCount < minChars} className="w-full sm:w-auto">
+            <Button type="submit" disabled={isSubmitting || charCount < minChars} className="w-full sm:w-auto bg-[#1800ad] hover:bg-[#1400a0] text-white">
               {isSubmitting ? "Submitting..." : "Submit Input"}
             </Button>
           </form>

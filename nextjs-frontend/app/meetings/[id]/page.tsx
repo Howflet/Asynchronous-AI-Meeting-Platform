@@ -207,7 +207,7 @@ export default function MeetingViewPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen bg-background py-12 pt-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Skeleton className="mb-6 h-8 w-64" />
           <div className="grid gap-6 lg:grid-cols-3">
@@ -225,12 +225,12 @@ export default function MeetingViewPage() {
 
   if (error || !meeting) {
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen bg-background py-12 pt-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Card className="p-8 text-center">
             <p className="mb-4 text-destructive">{error || "Meeting not found"}</p>
             <Link href="/meetings">
-              <Button>Back to Meetings</Button>
+              <Button className="bg-[#1800ad] hover:bg-[#1400a0] text-white">Back to Meetings</Button>
             </Link>
           </Card>
         </div>
@@ -242,7 +242,7 @@ export default function MeetingViewPage() {
   const canStart = meeting.status === "awaiting_inputs" && allParticipantsSubmitted
 
   return (
-    <div className="min-h-screen bg-background py-12">
+    <div className="min-h-screen bg-background py-12 pt-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <Link
           href="/meetings"
@@ -290,7 +290,7 @@ export default function MeetingViewPage() {
             </div>
             {canStart && (
               <div className="mt-6">
-                <Button onClick={handleStartMeeting} disabled={isStarting} className="w-full sm:w-auto">
+                <Button onClick={handleStartMeeting} disabled={isStarting} className="w-full sm:w-auto bg-[#1800ad] hover:bg-[#1400a0] text-white">
                   {isStarting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -322,7 +322,7 @@ export default function MeetingViewPage() {
                 <p className="text-muted-foreground">The AI meeting has finished. View the full report for insights.</p>
               </div>
               <Link href={`/meetings/${meetingId}/report`}>
-                <Button>
+                <Button className="bg-[#1800ad] hover:bg-[#1400a0] text-white">
                   <FileText className="mr-2 h-4 w-4" />
                   View Report
                 </Button>
@@ -354,7 +354,7 @@ export default function MeetingViewPage() {
                       </div>
                     )}
                     {meeting.status === "running" && (
-                      <Button size="sm" variant="outline" onClick={handlePauseMeeting} disabled={isPausing}>
+                      <Button size="sm" variant="outline" onClick={handlePauseMeeting} disabled={isPausing} className="bg-white/10 backdrop-blur-md border-white/30 hover:bg-[#1800ad]/30">
                         {isPausing ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

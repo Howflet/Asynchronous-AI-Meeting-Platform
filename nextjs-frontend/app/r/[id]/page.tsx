@@ -81,41 +81,41 @@ ${report.actionItems.map((a, i) => `${i + 1}. ${a}`).join("\n")}
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-background pt-28">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     )
   }
 
   if (!report) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 pt-28">
         <Card className="max-w-md p-8 text-center">
-          <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Report Not Available</h1>
-          <p className="text-slate-600">This meeting report could not be loaded.</p>
+          <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Report Not Available</h1>
+          <p className="text-muted-foreground">This meeting report could not be loaded.</p>
         </Card>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-background pt-28">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 py-12">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Meeting Report</h1>
-          <p className="text-slate-600">{report.subject}</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Meeting Report</h1>
+          <p className="text-muted-foreground">{report.subject}</p>
           <div className="flex gap-3 mt-4">
-            <Button onClick={copyToClipboard} variant="outline" size="sm">
+            <Button onClick={copyToClipboard} variant="outline" size="sm" className="bg-white/10 backdrop-blur-md border-white/30 hover:bg-[#1800ad]/30">
               {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
               {copied ? "Copied!" : "Copy Report"}
             </Button>
-            <Button onClick={downloadReport} variant="outline" size="sm">
+            <Button onClick={downloadReport} variant="outline" size="sm" className="bg-white/10 backdrop-blur-md border-white/30 hover:bg-[#1800ad]/30">
               <Download className="w-4 h-4 mr-2" />
               Download
             </Button>
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="sm" className="bg-white/10 backdrop-blur-md border-white/30 hover:bg-[#1800ad]/30">
               <Link href={`/m/${meetingId}`}>View Live Meeting</Link>
             </Button>
           </div>
@@ -126,12 +126,12 @@ ${report.actionItems.map((a, i) => `${i + 1}. ${a}`).join("\n")}
         {/* Highlights */}
         {report.highlights && report.highlights.length > 0 && (
           <Card className="p-6 mb-6">
-            <h2 className="text-2xl font-semibold text-slate-900 mb-4">Key Highlights</h2>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">Key Highlights</h2>
             <ol className="space-y-3">
               {report.highlights.map((highlight, index) => (
                 <li key={index} className="flex gap-3">
-                  <span className="font-semibold text-blue-600 min-w-[24px]">{index + 1}.</span>
-                  <span className="text-slate-700">{highlight}</span>
+                  <span className="font-semibold text-primary min-w-[24px]">{index + 1}.</span>
+                  <span className="text-foreground">{highlight}</span>
                 </li>
               ))}
             </ol>
@@ -141,12 +141,12 @@ ${report.actionItems.map((a, i) => `${i + 1}. ${a}`).join("\n")}
         {/* Decisions */}
         {report.decisions && report.decisions.length > 0 && (
           <Card className="p-6 mb-6">
-            <h2 className="text-2xl font-semibold text-slate-900 mb-4">Decisions Made</h2>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">Decisions Made</h2>
             <ol className="space-y-3">
               {report.decisions.map((decision, index) => (
                 <li key={index} className="flex gap-3">
-                  <span className="font-semibold text-green-600 min-w-[24px]">{index + 1}.</span>
-                  <span className="text-slate-700">{decision}</span>
+                  <span className="font-semibold text-green-400 min-w-[24px]">{index + 1}.</span>
+                  <span className="text-foreground">{decision}</span>
                 </li>
               ))}
             </ol>
@@ -156,12 +156,12 @@ ${report.actionItems.map((a, i) => `${i + 1}. ${a}`).join("\n")}
         {/* Action Items */}
         {report.actionItems && report.actionItems.length > 0 && (
           <Card className="p-6 mb-6">
-            <h2 className="text-2xl font-semibold text-slate-900 mb-4">Action Items</h2>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">Action Items</h2>
             <ol className="space-y-3">
               {report.actionItems.map((item, index) => (
                 <li key={index} className="flex gap-3">
-                  <span className="font-semibold text-orange-600 min-w-[24px]">{index + 1}.</span>
-                  <span className="text-slate-700">{item}</span>
+                  <span className="font-semibold text-orange-400 min-w-[24px]">{index + 1}.</span>
+                  <span className="text-foreground">{item}</span>
                 </li>
               ))}
             </ol>

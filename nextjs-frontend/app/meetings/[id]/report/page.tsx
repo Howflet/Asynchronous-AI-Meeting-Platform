@@ -127,7 +127,7 @@ ${report.actionItems.map((a, i) => `${i + 1}. ${a}`).join("\n")}
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen bg-background py-12 pt-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <Skeleton className="mb-6 h-8 w-64" />
           <Card className="p-8">
@@ -143,12 +143,12 @@ ${report.actionItems.map((a, i) => `${i + 1}. ${a}`).join("\n")}
 
   if (error || !report) {
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen bg-background py-12 pt-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <Card className="p-8 text-center">
             <p className="mb-4 text-destructive">{error || "Report not found"}</p>
             <Link href={`/meetings/${meetingId}`}>
-              <Button>Back to Meeting</Button>
+              <Button className="bg-[#1800ad] hover:bg-[#1400a0] text-white">Back to Meeting</Button>
             </Link>
           </Card>
         </div>
@@ -157,7 +157,7 @@ ${report.actionItems.map((a, i) => `${i + 1}. ${a}`).join("\n")}
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
+    <div className="min-h-screen bg-background py-12 pt-28">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <Link
           href={`/meetings/${meetingId}`}
@@ -173,11 +173,11 @@ ${report.actionItems.map((a, i) => `${i + 1}. ${a}`).join("\n")}
             <p className="text-muted-foreground">{formatDate(report.date)}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={copyToClipboard}>
+            <Button variant="outline" size="sm" onClick={copyToClipboard} className="bg-white/10 backdrop-blur-md border-white/30 hover:bg-[#1800ad]/30">
               {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
               {copied ? "Copied" : "Copy"}
             </Button>
-            <Button variant="outline" size="sm" onClick={downloadReport}>
+            <Button variant="outline" size="sm" onClick={downloadReport} className="bg-white/10 backdrop-blur-md border-white/30 hover:bg-[#1800ad]/30">
               <Download className="mr-2 h-4 w-4" />
               Download
             </Button>
@@ -248,12 +248,12 @@ ${report.actionItems.map((a, i) => `${i + 1}. ${a}`).join("\n")}
           {/* Actions */}
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link href="/meetings" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full bg-transparent">
+              <Button variant="outline" className="w-full bg-white/10 backdrop-blur-md border-white/30 hover:bg-[#1800ad]/30">
                 Back to All Meetings
               </Button>
             </Link>
             <Link href="/create" className="w-full sm:w-auto">
-              <Button className="w-full">Create New Meeting</Button>
+              <Button className="w-full bg-[#1800ad] hover:bg-[#1400a0] text-white">Create New Meeting</Button>
             </Link>
           </div>
         </div>

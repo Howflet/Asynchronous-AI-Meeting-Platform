@@ -21,7 +21,7 @@ function ParticipantPageContent() {
 
   // Show loading skeleton while redirecting
   return (
-    <div className="min-h-screen bg-background py-12">
+    <div className="min-h-screen bg-background py-12 pt-28">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="p-6 sm:p-8">
           <Skeleton className="mb-4 h-8 w-3/4" />
@@ -37,7 +37,7 @@ function ParticipantPageContent() {
 export default function ParticipantPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen bg-background py-12 pt-28">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="p-6 sm:p-8">
             <Skeleton className="mb-4 h-8 w-3/4" />

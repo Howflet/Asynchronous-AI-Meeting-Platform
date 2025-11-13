@@ -66,7 +66,7 @@ export default function MeetingsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen bg-background py-12 pt-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <Skeleton className="mb-2 h-8 w-48" />
@@ -84,11 +84,11 @@ export default function MeetingsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen bg-background py-12 pt-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Card className="p-8 text-center">
             <p className="mb-4 text-destructive">{error}</p>
-            <Button onClick={loadMeetings}>Try Again</Button>
+            <Button onClick={loadMeetings} className="bg-[#1800ad] hover:bg-[#1400a0] text-white">Try Again</Button>
           </Card>
         </div>
       </div>
@@ -96,7 +96,7 @@ export default function MeetingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
+    <div className="min-h-screen bg-background py-12 pt-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -104,7 +104,7 @@ export default function MeetingsPage() {
             <p className="text-muted-foreground">Manage and view all your AI-powered meetings</p>
           </div>
           <Link href="/create">
-            <Button>
+            <Button className="bg-[#1800ad] hover:bg-[#1400a0] text-white">
               <Plus className="mr-2 h-4 w-4" />
               Create Meeting
             </Button>
@@ -134,7 +134,7 @@ export default function MeetingsPage() {
             </p>
             {activeFilter === "all" && (
               <Link href="/create">
-                <Button>Create Your First Meeting</Button>
+                <Button className="bg-[#1800ad] hover:bg-[#1400a0] text-white">Create Your First Meeting</Button>
               </Link>
             )}
           </Card>
@@ -163,14 +163,14 @@ export default function MeetingsPage() {
                   <div className="flex gap-2">
                     {meeting.status === "completed" ? (
                       <Link href={`/meetings/${meeting.id}/report`}>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="bg-white/10 backdrop-blur-md border-white/30 hover:bg-[#1800ad]/30">
                           <FileText className="mr-2 h-4 w-4" />
                           View Report
                         </Button>
                       </Link>
                     ) : (
                       <Link href={`/meetings/${meeting.id}`}>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="bg-white/10 backdrop-blur-md border-white/30 hover:bg-[#1800ad]/30">
                           <Eye className="mr-2 h-4 w-4" />
                           View Details
                         </Button>

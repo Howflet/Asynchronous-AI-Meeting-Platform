@@ -134,8 +134,9 @@ export default function ParticipantLivePage() {
     console.log('Attempting to connect to Socket.IO for meeting:', meetingId)
     setConnectionStatus('connecting')
     
-    // Connect to the backend Socket.IO server
-    const socket = io('http://localhost:4000', {
+    // Connect to the backend Socket.IO server using current origin
+    const socketUrl = window.location.origin
+    const socket = io(socketUrl, {
       transports: ['websocket'],
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
@@ -250,7 +251,7 @@ export default function ParticipantLivePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen bg-background py-12 pt-28">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <Card className="p-8 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
@@ -265,7 +266,7 @@ export default function ParticipantLivePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
+    <div className="min-h-screen bg-background py-12 pt-28">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6">
@@ -491,7 +492,7 @@ export default function ParticipantLivePage() {
                         rows={2}
                         className="resize-none flex-1"
                       />
-                      <Button type="submit" disabled={isSubmittingMessage || !message.trim()}>
+                      <Button type="submit" disabled={isSubmittingMessage || !message.trim()} className="bg-[#1800ad] hover:bg-[#1400a0] text-white">
                         {isSubmittingMessage ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (

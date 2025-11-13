@@ -177,43 +177,43 @@ export default function MeetingLivePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-background pt-28">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     )
   }
 
   if (!meeting) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 pt-28">
         <Card className="max-w-md p-8 text-center">
-          <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Meeting Not Found</h1>
-          <p className="text-slate-600">This meeting does not exist or has been removed.</p>
+          <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Meeting Not Found</h1>
+          <p className="text-muted-foreground">This meeting does not exist or has been removed.</p>
         </Card>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-background pt-28">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">{meeting.subject}</h1>
-              <p className="text-slate-600">{meeting.details}</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">{meeting.subject}</h1>
+              <p className="text-muted-foreground">{meeting.details}</p>
             </div>
             <span
               className={`px-4 py-2 rounded-full text-sm font-medium ${
                 meeting.status === "completed"
-                  ? "bg-green-100 text-green-700"
+                  ? "bg-green-500/10 text-green-600 dark:text-green-400"
                   : meeting.status === "running"
-                    ? "bg-blue-100 text-blue-700"
+                    ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
                     : meeting.status === "paused"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-slate-100 text-slate-700"
+                      ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
+                      : "bg-muted text-muted-foreground"
               }`}
             >
               {meeting.status}
@@ -222,20 +222,20 @@ export default function MeetingLivePage() {
 
           {/* Meeting Controls - Only visible to hosts */}
           {isHost && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {meeting.status === "awaiting_inputs" && (
-                <Button onClick={handleStart} size="sm">
+                <Button onClick={handleStart} size="sm" className="bg-[#1800ad] hover:bg-[#1400a0] text-white">
                   <Play className="w-4 h-4 mr-2" />
                   Start Meeting
                 </Button>
               )}
               {meeting.status === "running" && (
                 <>
-                  <Button onClick={handlePause} size="sm" variant="outline">
+                  <Button onClick={handlePause} size="sm" variant="outline" className="bg-white/10 backdrop-blur-md border-white/30 hover:bg-[#1800ad]/30">
                     <Pause className="w-4 h-4 mr-2" />
                     Pause
                   </Button>
-                  <Button onClick={handleAdvance} size="sm" variant="outline">
+                  <Button onClick={handleAdvance} size="sm" variant="outline" className="bg-white/10 backdrop-blur-md border-white/30 hover:bg-[#1800ad]/30">
                     <FastForward className="w-4 h-4 mr-2" />
                     Advance Turn
                   </Button>
@@ -247,7 +247,7 @@ export default function MeetingLivePage() {
               )}
               {meeting.status === "paused" && (
                 <>
-                  <Button onClick={handleResume} size="sm">
+                  <Button onClick={handleResume} size="sm" className="bg-[#1800ad] hover:bg-[#1400a0] text-white">
                     <Play className="w-4 h-4 mr-2" />
                     Resume
                   </Button>
@@ -258,7 +258,7 @@ export default function MeetingLivePage() {
                 </>
               )}
               {meeting.status === "completed" && (
-                <Button asChild size="sm">
+                <Button asChild size="sm" className="bg-[#1800ad] hover:bg-[#1400a0] text-white">
                   <Link href={`/r/${meetingId}`}>
                     <FileText className="w-4 h-4 mr-2" />
                     View Report
@@ -271,13 +271,13 @@ export default function MeetingLivePage() {
                 </div>
               )}
               
-              {/* Delete button - always available for hosts */}
-              <div className="border-t pt-3 mt-3">
+              {/* Delete button - separated with margin */}
+              <div className="ml-auto">
                 <Button 
                   onClick={handleDelete} 
                   size="sm" 
                   variant="ghost" 
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete Meeting
@@ -288,8 +288,8 @@ export default function MeetingLivePage() {
           
           {/* Non-host message for viewing only */}
           {!isHost && (
-            <p className="text-sm text-slate-600">
-              Viewing as observer. <Link href="/host" className="text-blue-600 hover:underline">Login as host</Link> to control the meeting.
+            <p className="text-sm text-muted-foreground">
+              Viewing as observer. <Link href="/host" className="text-primary hover:underline">Login as host</Link> to control the meeting.
             </p>
           )}
         </div>
@@ -298,15 +298,15 @@ export default function MeetingLivePage() {
           {/* Main Conversation */}
           <div className="lg:col-span-2 space-y-4">
             <Card className="p-6">
-              <h2 className="text-xl font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                 <MessageSquare className="w-5 h-5" />
                 Live Conversation
               </h2>
 
               <div className="space-y-4 mb-6 max-h-[600px] overflow-y-auto">
                 {conversation.length === 0 ? (
-                  <div className="text-center py-12 text-slate-500">
-                    <Clock className="w-12 h-12 mx-auto mb-3 text-slate-400" />
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Clock className="w-12 h-12 mx-auto mb-3" />
                     <p>Waiting for conversation to begin...</p>
                   </div>
                 ) : (
@@ -362,7 +362,7 @@ export default function MeetingLivePage() {
                             )}
                           </div>
                         </div>
-                        <div className="leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                        <div className="leading-relaxed text-foreground whitespace-pre-wrap">
                           {String(turn.message || '')}
                         </div>
                       </div>
@@ -374,7 +374,7 @@ export default function MeetingLivePage() {
               {/* Message Injection - Only for hosts */}
               {isHost && (meeting.status === "running" || meeting.status === "paused") && (
                 <form onSubmit={handleInjectMessage} className="space-y-3 border-t pt-4">
-                  <h3 className="font-medium text-slate-900">Inject Message</h3>
+                  <h3 className="font-medium text-foreground">Inject Message</h3>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-1">
                       <Input
@@ -392,7 +392,7 @@ export default function MeetingLivePage() {
                           onChange={(e) => setMessage(e.target.value)}
                           required
                         />
-                        <Button type="submit" size="icon" disabled={sending}>
+                        <Button type="submit" size="icon" disabled={sending} className="bg-[#1800ad] hover:bg-[#1400a0] text-white">
                           {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                         </Button>
                       </div>
@@ -407,7 +407,7 @@ export default function MeetingLivePage() {
           <div className="space-y-4">
             {/* Participants */}
             <Card className="p-4">
-              <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+              <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 AI Personas ({personas.length})
               </h3>
@@ -422,8 +422,8 @@ export default function MeetingLivePage() {
                   
                   return (
                     <div key={persona?.id || index} className="flex items-center gap-2 text-sm">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                      <span className="text-slate-700">{displayName}</span>
+                      <div className="w-2 h-2 bg-primary rounded-full" />
+                      <span className="text-foreground">{displayName}</span>
                     </div>
                   )
                 })}
@@ -432,13 +432,13 @@ export default function MeetingLivePage() {
 
             {/* Meeting Info */}
             <Card className="p-4">
-              <h3 className="font-semibold text-slate-900 mb-3">Meeting Info</h3>
+              <h3 className="font-semibold text-foreground mb-3">Meeting Info</h3>
               <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-slate-600">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <Clock className="w-4 h-4" />
                   <span>Created {new Date(meeting.createdAt).toLocaleString()}</span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-600">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <MessageSquare className="w-4 h-4" />
                   <span>{conversation.length} messages</span>
                 </div>

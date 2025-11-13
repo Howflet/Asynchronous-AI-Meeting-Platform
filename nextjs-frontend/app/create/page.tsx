@@ -166,9 +166,9 @@ export default function CreateMeetingPage() {
   // Show loading state while checking authentication
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-background pt-16">
         <div className="text-center">
-          <p className="text-slate-600">Redirecting to login...</p>
+          <p className="text-muted-foreground">Redirecting to login...</p>
         </div>
       </div>
     )
@@ -176,7 +176,7 @@ export default function CreateMeetingPage() {
 
   if (invitationLinks && invitationLinks.length > 0) {
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen bg-background py-12 pt-28">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <Card className="p-6 sm:p-8">
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -209,11 +209,11 @@ export default function CreateMeetingPage() {
             </div>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button onClick={resetForm} variant="outline" className="w-full sm:w-auto bg-transparent">
+              <Button onClick={resetForm} variant="outline" className="w-full sm:w-auto bg-white/10 backdrop-blur-md border-white/30 text-white hover:bg-[#1800ad]/30 hover:text-white">
                 Create Another Meeting
               </Button>
               <Link href="/meetings" className="w-full sm:w-auto">
-                <Button className="w-full">View All Meetings</Button>
+                <Button className="w-full bg-[#1800ad] hover:bg-[#1400a0] text-white">View All Meetings</Button>
               </Link>
             </div>
           </Card>
@@ -223,7 +223,7 @@ export default function CreateMeetingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
+    <div className="min-h-screen bg-background py-12 pt-28">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
@@ -273,7 +273,7 @@ export default function CreateMeetingPage() {
                   Participants <span className="text-destructive">*</span>
                   <span className="ml-2 text-sm font-normal text-muted-foreground">(minimum 2)</span>
                 </Label>
-                <Button type="button" size="sm" variant="outline" onClick={addParticipant}>
+                <Button type="button" size="sm" variant="outline" onClick={addParticipant} className="bg-white/10 backdrop-blur-md border-white/30 hover:bg-[#1800ad]/30">
                   <Plus className="mr-1 h-4 w-4" />
                   Add Participant
                 </Button>
@@ -327,11 +327,11 @@ export default function CreateMeetingPage() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto bg-[#1800ad] hover:bg-[#1400a0] text-white">
                 {isSubmitting ? "Creating..." : "Create Meeting & Generate Links"}
               </Button>
               <Link href="/" className="w-full sm:w-auto">
-                <Button type="button" variant="outline" className="w-full bg-transparent">
+                <Button type="button" variant="outline" className="w-full bg-white/10 backdrop-blur-md border-white/30 hover:bg-[#1800ad]/30">
                   Cancel
                 </Button>
               </Link>

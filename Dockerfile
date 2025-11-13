@@ -73,6 +73,8 @@ COPY --from=builder --chown=a2mp:nodejs /app/backend/package*.json ./backend/
 COPY --from=builder --chown=a2mp:nodejs /app/nextjs-frontend/.next/standalone ./
 COPY --from=builder --chown=a2mp:nodejs /app/nextjs-frontend/.next/static ./nextjs-frontend/.next/static
 COPY --from=builder --chown=a2mp:nodejs /app/nextjs-frontend/public ./nextjs-frontend/public
+COPY --from=builder --chown=a2mp:nodejs /app/nextjs-frontend/server.js ./nextjs-frontend/
+COPY --from=prod-deps --chown=a2mp:nodejs /app/nextjs-frontend/node_modules ./nextjs-frontend/node_modules
 
 # Copy utility scripts
 COPY --chown=a2mp:nodejs check-*.js ./
