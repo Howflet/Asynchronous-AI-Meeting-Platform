@@ -19,6 +19,12 @@ A²MP enables structured virtual meetings where AI personas represent different 
 
 <img width="1920" height="1080" alt="Screenshot (14)" src="https://github.com/user-attachments/assets/3f83cff7-6b64-4445-82af-46f654cd31d0" />
 
+<img width="1920" height="1080" alt="Screenshot (16)" src="https://github.com/user-attachments/assets/945786ec-fdf7-4414-800b-8ab5f2c8d312" />
+
+<img width="1920" height="1080" alt="Screenshot (17)" src="https://github.com/user-attachments/assets/583d1226-d0fc-4891-945d-c109112caea5" />
+
+<img width="1920" height="1080" alt="Screenshot (18)" src="https://github.com/user-attachments/assets/ab0f7a4b-0fac-4aa8-9faa-41db95331710" />
+
 ## Key Features
 
 - **AI personas** generated from participant inputs
