@@ -8,24 +8,24 @@ A²MP enables structured virtual meetings where AI personas represent different 
 
 **Perfect for:**
 
-- 🗳️ Distributed decision-making across time zones
-- 💼 Budget planning with multiple stakeholders
-- 🎯 Strategic planning sessions
-- 🤝 Conflict resolution and compromise building
-- 📊 Asynchronous brainstorming and ideation
+- Distributed decision-making across time zones
+- Budget planning with multiple stakeholders
+- Strategic planning sessions
+- Conflict resolution and compromise building
+- Asynchronous brainstorming and ideation
 
-## ✨ Key Features
+## Key Features
 
-- ✅ **AI personas** generated from participant inputs
-- ✅ **Real-time conversation streaming** via Socket.IO WebSockets
-- ✅ **Smart turn-taking** with natural conversational flow
-- ✅ **Automatic pause** when human input needed
-- ✅ **Live participation** - inject messages during conversations
-- ✅ **Collaborative whiteboard** tracking shared ideas
-- ✅ **Visual message distinction** - color-coded AI vs human messages
-- ✅ **Smart repetition detection** to prevent loops
-- ✅ **Automatic report generation** with consensus summaries and transcripts
-- ✅ **Dual API key support** for quota isolation
+- **AI personas** generated from participant inputs
+- **Real-time conversation streaming** via Socket.IO WebSockets
+- **Smart turn-taking** with natural conversational flow
+- **Automatic pause** when human input needed
+- **Live participation** - inject messages during conversations
+- **Collaborative whiteboard** tracking shared ideas
+- **Visual message distinction** - color-coded AI vs human messages
+- **Smart repetition detection** to prevent loops
+- **Automatic report generation** with consensus summaries and transcripts
+- **Dual API key support** for quota isolation
 
 ## Repository Structure
 
@@ -79,8 +79,8 @@ npm run dev
 
 This starts:
 
-- 🔧 Backend API on http://localhost:4000
-- 🎨 Next.js Frontend on http://localhost:3000
+- Backend API on http://localhost:4000
+- Next.js Frontend on http://localhost:3000
 
 ### 4. Create Your First Meeting
 
@@ -260,7 +260,7 @@ Verify engine logs run every 15 seconds in the terminal.
 
 ### API Key Issues
 
-Verify your keys at [Google AI Studio](https://makersuite.google.com/app/apikey)
+Verify your keys at Google AI Studio
 
 Check quota:
 
@@ -397,8 +397,4 @@ Proprietary. Evaluation only. See `LICENSE` for details.
 
 ## Credits
 
-Built with Google Gemini API, Express, React, Next.js, Socket.IO, Vite, TypeScript, and better-sqlite3.
-
----
-
-**Made with ❤️ for asynchronous collaboration**
+Shout outs to Ike and Alyan for inspiring me to build this. If you would like more about how this idea was born, please read [our story](PROJECT_STORY.md).
