@@ -408,4 +408,4 @@ Proprietary. Evaluation only. See `LICENSE` for details.
 
 ## Credits
 
-Shout outs to Ike and Alyan for inspiring me to build this. If you would like more about how this idea was born, please read [our story](PROJECT_STORY.md).
+Shout out to Ike and Alyan for inspiring me to build this. If you'd like to know more about how this idea was born, please read [our story](PROJECT_STORY.md).
