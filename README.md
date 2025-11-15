@@ -13,6 +13,11 @@ A²MP enables structured virtual meetings where AI personas represent different 
 - Strategic planning sessions
 - Conflict resolution and compromise building
 - Asynchronous brainstorming and ideation
+## Screenshots
+
+<img width="1920" height="1080" alt="Screenshot (12)" src="https://github.com/user-attachments/assets/064f7db8-3cdd-4ed3-9ab7-99494304c84c" />
+
+<img width="1920" height="1080" alt="Screenshot (14)" src="https://github.com/user-attachments/assets/3f83cff7-6b64-4445-82af-46f654cd31d0" />
 
 ## Key Features
 
