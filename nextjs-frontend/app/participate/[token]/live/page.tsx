@@ -12,11 +12,11 @@ import { getParticipantInfo, getMeetingConversation, getMeetingWhiteboard, injec
 import type { ConversationTurn, Whiteboard, MeetingStatus } from "@/lib/types"
 import { Skeleton } from "@/components/ui/skeleton"
 import { StatusBadge } from "@/components/status-badge"
-import { 
-  MessageSquare, 
-  Clock, 
-  Send, 
-  AlertCircle, 
+import {
+  MessageSquare,
+  Clock,
+  Send,
+  AlertCircle,
   Users,
   Loader2,
   FileText,
@@ -75,7 +75,7 @@ export default function ParticipantLivePage() {
     try {
       setIsLoading(true)
       const data = await getParticipantInfo(token)
-      
+
       if (!data.participant.hasSubmitted) {
         // Redirect back to input page if they haven't submitted yet
         window.location.href = `/participate/${token}`
@@ -111,7 +111,7 @@ export default function ParticipantLivePage() {
 
   const loadConversationData = async () => {
     if (!meetingId) return
-    
+
     try {
       const [conversationData, whiteboardData] = await Promise.all([
         getMeetingConversation(meetingId),
@@ -133,9 +133,12 @@ export default function ParticipantLivePage() {
 
     console.log('Attempting to connect to Socket.IO for meeting:', meetingId)
     setConnectionStatus('connecting')
-    
-    // Connect to the backend Socket.IO server using current origin
-    const socketUrl = window.location.origin
+
+    // Connect to the backend Socket.IO server directly
+    // Use environment variable or fallback to localhost:4000
+    const socketUrl = process.env.NEXT_PUBLIC_VITE_API_BASE_URL || 'http://localhost:4000'
+    console.log('Connecting to socket at:', socketUrl)
+
     const socket = io(socketUrl, {
       transports: ['websocket'],
       reconnectionAttempts: 5,
@@ -148,7 +151,7 @@ export default function ParticipantLivePage() {
       console.log('Connected to Socket.IO server, joining meeting room:', meetingId)
       setIsConnected(true)
       setConnectionStatus('connected')
-      
+
       // Join the meeting room for real-time updates (backend expects 'join' event)
       socket.emit('join', meetingId)
     })
@@ -280,6 +283,28 @@ export default function ParticipantLivePage() {
           <p className="text-muted-foreground">{meetingDetails}</p>
         </div>
 
+        {/* Connection Error Banner */}
+        {(connectionStatus === 'disconnected' || connectionStatus === 'error') && (
+          <div className="mb-6 rounded-md bg-red-50 p-4 border border-red-200 dark:bg-red-900/20 dark:border-red-800">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <WifiOff className="h-5 w-5 text-red-400" aria-hidden="true" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                  Connection Lost
+                </h3>
+                <div className="mt-2 text-sm text-red-700 dark:text-red-300">
+                  <p>
+                    You have lost connection to the meeting server. Real-time updates are paused.
+                    Attempting to reconnect...
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Meeting Status Messages */}
         {meetingStatus === "awaiting_inputs" && (
           <Card className="mb-6 p-4 bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
@@ -298,31 +323,27 @@ export default function ParticipantLivePage() {
         )}
 
         {meetingStatus === "paused" && (
-          <Card className={`mb-6 p-4 ${
-            pauseReason === "host" 
-              ? "bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800"
-              : "bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-800"
-          }`}>
+          <Card className={`mb-6 p-4 ${pauseReason === "host"
+            ? "bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800"
+            : "bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-800"
+            }`}>
             <div className="flex items-center gap-2">
-              <AlertCircle className={`h-5 w-5 ${
-                pauseReason === "host"
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-orange-600 dark:text-orange-400"
-              }`} />
+              <AlertCircle className={`h-5 w-5 ${pauseReason === "host"
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-orange-600 dark:text-orange-400"
+                }`} />
               <div>
-                <p className={`font-medium ${
-                  pauseReason === "host"
-                    ? "text-blue-900 dark:text-blue-100"
-                    : "text-orange-900 dark:text-orange-100"
-                }`}>
+                <p className={`font-medium ${pauseReason === "host"
+                  ? "text-blue-900 dark:text-blue-100"
+                  : "text-orange-900 dark:text-orange-100"
+                  }`}>
                   {pauseReason === "host" ? "Meeting Paused by Host" : "Your Input Requested"}
                 </p>
-                <p className={`text-sm ${
-                  pauseReason === "host"
-                    ? "text-blue-700 dark:text-blue-300"
-                    : "text-orange-700 dark:text-orange-300"
-                }`}>
-                  {pauseReason === "host" 
+                <p className={`text-sm ${pauseReason === "host"
+                  ? "text-blue-700 dark:text-blue-300"
+                  : "text-orange-700 dark:text-orange-300"
+                  }`}>
+                  {pauseReason === "host"
                     ? "The meeting has been temporarily paused by the host. Please wait for it to resume."
                     : "The conversation needs human guidance. Use the message box below to contribute."
                   }
@@ -370,7 +391,7 @@ export default function ParticipantLivePage() {
                       <span className="text-xs text-muted-foreground">Live</span>
                     </div>
                   )}
-                  
+
                   {/* Connection Status Indicator */}
                   <div className="flex items-center gap-1">
                     {connectionStatus === 'connected' && (
@@ -401,7 +422,7 @@ export default function ParticipantLivePage() {
                 </div>
               </div>
 
-              <div 
+              <div
                 className="flex-1 p-4 overflow-y-auto overflow-x-hidden"
                 style={{ maxHeight: '500px' }}
               >
@@ -411,8 +432,8 @@ export default function ParticipantLivePage() {
                       <div className="text-center">
                         <div className="mb-3 text-4xl">💬</div>
                         <p className="text-sm">
-                          {meetingStatus === "awaiting_inputs" 
-                            ? "Waiting for meeting to start..." 
+                          {meetingStatus === "awaiting_inputs"
+                            ? "Waiting for meeting to start..."
                             : "Conversation will appear here..."}
                         </p>
                       </div>
@@ -423,7 +444,7 @@ export default function ParticipantLivePage() {
                       const isModerator = turn.speaker === "Moderator" || turn.speaker.toLowerCase().includes("moderator")
                       const isHuman = turn.speaker.startsWith('Human:')
                       const isAI = turn.speaker.startsWith('AI:')
-                      
+
                       // Extract clean name without AI:/Human: prefixes
                       let cleanSpeakerName = turn.speaker
                       if (isHuman) {
@@ -431,22 +452,21 @@ export default function ParticipantLivePage() {
                       } else if (isAI) {
                         cleanSpeakerName = turn.speaker.replace('AI:', '').trim()
                       }
-                      
+
                       // Check if this is the current participant's message
                       const isMyMessage = cleanSpeakerName === participantEmail
-                      
+
                       return (
                         <div
                           key={turn.id}
-                          className={`rounded-lg p-4 shadow-sm transition-colors ${
-                            isModerator 
-                              ? "border border-primary/20 bg-primary/5" 
-                              : isHuman
-                                ? "border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950"
-                                : isAI
-                                  ? "border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950"
-                                  : "border border-border bg-card"
-                          }`}
+                          className={`rounded-lg p-4 shadow-sm transition-colors ${isModerator
+                            ? "border border-primary/20 bg-primary/5"
+                            : isHuman
+                              ? "border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950"
+                              : isAI
+                                ? "border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950"
+                                : "border border-border bg-card"
+                            }`}
                         >
                           <div className="mb-2 flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -525,7 +545,7 @@ export default function ParticipantLivePage() {
             {/* Whiteboard */}
             <Card className="p-4">
               <h3 className="mb-3 text-sm font-semibold text-foreground">Meeting Notes</h3>
-              
+
               <div className="space-y-4">
                 {whiteboard.keyFacts.length > 0 && (
                   <div>

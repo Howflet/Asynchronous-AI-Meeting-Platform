@@ -37,9 +37,23 @@ export interface Whiteboard {
 
 export interface MeetingReport {
   id: string
+  meetingId?: string
   subject: string
   date: string
   highlights: string[]
   decisions: string[]
   actionItems: string[]
+  createdAt?: string
+  citations?: Citation[]
+}
+
+export interface Citation {
+  id: string
+  meeting_id: string
+  persona_id: string
+  message_id: string
+  title?: string | null
+  url: string
+  snippet?: string | null
+  created_at?: number
 }

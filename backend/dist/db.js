@@ -1,19 +1,16 @@
 import Database from "better-sqlite3";
 import path from "node:path";
 import fs from "node:fs";
-
 const isBackendDir = process.cwd().endsWith('backend');
 const dataDir = isBackendDir
-  ? path.join(process.cwd(), "data")
-  : path.join(process.cwd(), "backend", "data");
-
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-
+    ? path.join(process.cwd(), "data")
+    : path.join(process.cwd(), "backend", "data");
+if (!fs.existsSync(dataDir))
+    fs.mkdirSync(dataDir, { recursive: true });
 export const db = new Database(path.join(dataDir, "a2mp.db"));
-
 // Setup tables if not exist
 export function initDb() {
-  db.exec(`
+    db.exec(`
     PRAGMA foreign_keys = ON;
     CREATE TABLE IF NOT EXISTS meetings (
       id TEXT PRIMARY KEY,
@@ -84,33 +81,31 @@ export function initDb() {
     CREATE INDEX IF NOT EXISTS idx_citations_meeting ON citations(meeting_id);
     CREATE INDEX IF NOT EXISTS idx_citations_message ON citations(message_id);
   `);
-
-  // Migration: Rename 'mcp' column to 'config' if it exists
-  try {
-    const columns = db.pragma("table_info(personas)") as Array<{ name: string }>;
-    const hasMcpColumn = columns.some((col) => col.name === 'mcp');
-    const hasConfigColumn = columns.some((col) => col.name === 'config');
-
-    if (hasMcpColumn && !hasConfigColumn) {
-      console.log("[DB] Migrating personas table: renaming 'mcp' column to 'config'");
-      db.exec(`ALTER TABLE personas RENAME COLUMN mcp TO config;`);
-      console.log("[DB] Migration completed successfully");
+    // Migration: Rename 'mcp' column to 'config' if it exists
+    try {
+        const columns = db.pragma("table_info(personas)");
+        const hasMcpColumn = columns.some((col) => col.name === 'mcp');
+        const hasConfigColumn = columns.some((col) => col.name === 'config');
+        if (hasMcpColumn && !hasConfigColumn) {
+            console.log("[DB] Migrating personas table: renaming 'mcp' column to 'config'");
+            db.exec(`ALTER TABLE personas RENAME COLUMN mcp TO config;`);
+            console.log("[DB] Migration completed successfully");
+        }
     }
-  } catch (error) {
-    console.warn("[DB] Migration warning:", error);
-  }
-
-  // Migration: Add pauseReason column to meetings table if it doesn't exist
-  try {
-    const meetingsColumns = db.pragma("table_info(meetings)") as Array<{ name: string }>;
-    const hasPauseReasonColumn = meetingsColumns.some((col) => col.name === 'pauseReason');
-
-    if (!hasPauseReasonColumn) {
-      console.log("[DB] Adding pauseReason column to meetings table");
-      db.exec(`ALTER TABLE meetings ADD COLUMN pauseReason TEXT;`);
-      console.log("[DB] pauseReason column added successfully");
+    catch (error) {
+        console.warn("[DB] Migration warning:", error);
     }
-  } catch (error) {
-    console.warn("[DB] pauseReason migration warning:", error);
-  }
+    // Migration: Add pauseReason column to meetings table if it doesn't exist
+    try {
+        const meetingsColumns = db.pragma("table_info(meetings)");
+        const hasPauseReasonColumn = meetingsColumns.some((col) => col.name === 'pauseReason');
+        if (!hasPauseReasonColumn) {
+            console.log("[DB] Adding pauseReason column to meetings table");
+            db.exec(`ALTER TABLE meetings ADD COLUMN pauseReason TEXT;`);
+            console.log("[DB] pauseReason column added successfully");
+        }
+    }
+    catch (error) {
+        console.warn("[DB] pauseReason migration warning:", error);
+    }
 }

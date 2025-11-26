@@ -85,7 +85,7 @@ This starts:
 ### 4. Create Your First Meeting
 
 1. Open http://localhost:3000
-2. Log in as host (default password: `password`)
+2. Log in as host (default password: `12345`)
 3. Create a meeting with 2+ participants
 4. Share participant links
 5. Submit inputs as each participant

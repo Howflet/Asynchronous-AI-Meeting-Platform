@@ -1,0 +1,131 @@
+/**
+ * Background queue for persona generation
+ * Prevents N parallel LLM calls on meeting start
+ */
+import { generatePersonaFromInput } from "./gemini.js";
+import { db } from "../db.js";
+import { generateId, now, toJson } from "../util.js";
+export class PersonaQueue {
+    queue = [];
+    processing = false;
+    activeJobs = new Map();
+    /**
+     * Queue persona generation for a meeting
+     */
+    async queuePersonaGeneration(meetingId, participantId, input, meetingSubject) {
+        // Check if already queued or processing
+        const jobKey = `${meetingId}:${participantId}`;
+        if (this.activeJobs.has(jobKey)) {
+            return this.activeJobs.get(jobKey);
+        }
+        // Check if persona already exists
+        const existing = db
+            .prepare("SELECT id FROM personas WHERE meetingId = ? AND participantId = ?")
+            .get(meetingId, participantId);
+        if (existing) {
+            console.log(`[PersonaQueue] Persona already exists for ${jobKey}`);
+            return Promise.resolve();
+        }
+        // Create a promise that resolves when the persona is generated
+        const promise = new Promise((resolve, reject) => {
+            this.queue.push({
+                meetingId,
+                participantId,
+                input,
+                meetingSubject,
+                timestamp: now(),
+            });
+            // Store resolve/reject callbacks
+            const originalJob = this.queue[this.queue.length - 1];
+            originalJob._resolve = resolve;
+            originalJob._reject = reject;
+        });
+        this.activeJobs.set(jobKey, promise);
+        // Start processing if not already running
+        if (!this.processing) {
+            this.processQueue();
+        }
+        return promise;
+    }
+    /**
+     * Queue all personas for a meeting
+     */
+    async queueAllPersonasForMeeting(meetingId, inputs, meetingSubject) {
+        console.log(`[PersonaQueue] Queueing ${inputs.length} persona generations for meeting ${meetingId}`);
+        const promises = inputs.map(inp => this.queuePersonaGeneration(meetingId, inp.participantId, inp.content, meetingSubject));
+        // Don't wait for all to complete - they'll process in background
+        Promise.all(promises).catch(error => {
+            console.error(`[PersonaQueue] Error generating personas:`, error);
+        });
+    }
+    /**
+     * Process the queue sequentially
+     */
+    async processQueue() {
+        if (this.processing)
+            return;
+        this.processing = true;
+        console.log(`[PersonaQueue] Starting queue processing with ${this.queue.length} jobs`);
+        while (this.queue.length > 0) {
+            const job = this.queue.shift();
+            const jobKey = `${job.meetingId}:${job.participantId}`;
+            try {
+                console.log(`[PersonaQueue] Processing persona generation for ${jobKey} ` +
+                    `(${this.queue.length} remaining in queue)`);
+                // Generate persona (goes through rate limiter in gemini.ts)
+                const { name, config } = await generatePersonaFromInput(job.input, job.meetingSubject);
+                // Save to database
+                const persona = {
+                    id: generateId("per"),
+                    meetingId: job.meetingId,
+                    participantId: job.participantId,
+                    role: "persona",
+                    name,
+                    config,
+                    createdAt: now(),
+                };
+                db.prepare("INSERT INTO personas (id, meetingId, participantId, role, name, config, createdAt) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)").run(persona.id, persona.meetingId, persona.participantId, persona.role, persona.name, toJson(persona.config), persona.createdAt);
+                console.log(`[PersonaQueue] Successfully generated persona: ${name}`);
+                // Resolve the promise
+                if (job._resolve) {
+                    job._resolve();
+                }
+            }
+            catch (error) {
+                console.error(`[PersonaQueue] Error processing job ${jobKey}:`, error);
+                // Reject the promise
+                if (job._reject) {
+                    job._reject(error);
+                }
+            }
+            finally {
+                // Clean up active job tracking
+                this.activeJobs.delete(jobKey);
+            }
+        }
+        console.log('[PersonaQueue] Queue processing complete');
+        this.processing = false;
+    }
+    /**
+     * Check if all personas for a meeting have been generated
+     */
+    async areAllPersonasReady(meetingId, expectedCount) {
+        const count = db
+            .prepare("SELECT COUNT(*) as count FROM personas WHERE meetingId = ? AND role = 'persona'")
+            .get(meetingId);
+        return count.count >= expectedCount;
+    }
+    /**
+     * Get queue status
+     */
+    getStatus() {
+        return {
+            queueLength: this.queue.length,
+            processing: this.processing,
+            activeJobs: this.activeJobs.size,
+        };
+    }
+}
+// Singleton instance
+export const personaQueue = new PersonaQueue();

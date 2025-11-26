@@ -2,16 +2,18 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getMeetings } from "@/lib/api"
 import type { Meeting, MeetingStatus } from "@/lib/types"
 import { StatusBadge } from "@/components/status-badge"
-import { Calendar, Users, Plus, FileText, Eye } from "lucide-react"
+import { Calendar, Users, Plus, FileText, Eye, LogOut } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function MeetingsPage() {
+  const router = useRouter()
   const [meetings, setMeetings] = useState<Meeting[]>([])
   const [filteredMeetings, setFilteredMeetings] = useState<Meeting[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -19,8 +21,13 @@ export default function MeetingsPage() {
   const [activeFilter, setActiveFilter] = useState<MeetingStatus | "all">("all")
 
   useEffect(() => {
+    const auth = localStorage.getItem("hostAuthenticated")
+    if (auth !== "true") {
+      router.push("/host")
+      return
+    }
     loadMeetings()
-  }, [])
+  }, [router])
 
   useEffect(() => {
     if (activeFilter === "all") {
@@ -29,6 +36,11 @@ export default function MeetingsPage() {
       setFilteredMeetings(meetings.filter((m) => m.status === activeFilter))
     }
   }, [activeFilter, meetings])
+
+  const handleLogout = () => {
+    localStorage.removeItem("hostAuthenticated")
+    router.push("/host")
+  }
 
   const loadMeetings = async () => {
     try {
@@ -103,12 +115,18 @@ export default function MeetingsPage() {
             <h1 className="mb-2 text-3xl font-bold text-foreground">Your Meetings</h1>
             <p className="text-muted-foreground">Manage and view all your AI-powered meetings</p>
           </div>
-          <Link href="/create">
-            <Button className="bg-[#1800ad] hover:bg-[#1400a0] text-white">
-              <Plus className="mr-2 h-4 w-4" />
-              Create Meeting
+          <div className="flex gap-3">
+            <Link href="/create">
+              <Button className="bg-[#1800ad] hover:bg-[#1400a0] text-white">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Meeting
+              </Button>
+            </Link>
+            <Button variant="outline" onClick={handleLogout} className="bg-white/10 backdrop-blur-md border-white/30 hover:bg-[#1800ad]/30">
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
             </Button>
-          </Link>
+          </div>
         </div>
 
         <Tabs value={activeFilter} onValueChange={(v) => setActiveFilter(v as MeetingStatus | "all")} className="mb-6">

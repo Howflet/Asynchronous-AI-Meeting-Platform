@@ -388,7 +388,8 @@ export async function personaRespond(
   persona: { name: string; config: PersonaConfig },
   whiteboard: Whiteboard,
   history: ConversationTurn[],
-  participantInput?: string
+  participantInput?: string,
+  webContext?: string
 ): Promise<string> {
   // Show more history to avoid repetition
   const recentHistory = history.slice(-8); // Last 8 turns to see more context
@@ -413,6 +414,8 @@ Identity: ${persona.config.identity.substring(0, 120)}
 ${participantInput ? `Your original input: "${participantInput.substring(0, 150)}"` : ''}
 ${yourHistory}
 ${humanContext}
+
+${webContext ? `Web context (use for facts; cite inline as [1], [2], ...):\n${webContext}` : ''}
 
 Recent discussion: ${recentHistory.map(t => `${t.speaker}: ${t.message.substring(0, 60)}`).join(' | ')}
 

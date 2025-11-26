@@ -35,12 +35,12 @@ function extractRetryInfo(error: any): RetryInfo | null {
         }
       }
     }
-    
+
     // Check for HTTP Retry-After header
     if (error?.response?.headers?.['retry-after']) {
       return { retryAfter: error.response.headers['retry-after'] };
     }
-    
+
     // Check error message for rate limit info
     if (error?.message) {
       const match = error.message.match(/retry after (\d+) seconds?/i);
@@ -48,7 +48,7 @@ function extractRetryInfo(error: any): RetryInfo | null {
         return { retryDelayMs: parseInt(match[1], 10) * 1000 };
       }
     }
-    
+
     return null;
   } catch (e) {
     return null;
@@ -64,13 +64,13 @@ function parseRetryAfter(retryAfter: string): number {
   if (!isNaN(seconds)) {
     return seconds * 1000;
   }
-  
+
   // If it's a date, calculate difference
   const date = new Date(retryAfter);
   if (!isNaN(date.getTime())) {
     return Math.max(0, date.getTime() - Date.now());
   }
-  
+
   return 0;
 }
 
@@ -81,19 +81,19 @@ function isRetryableError(error: any): boolean {
   // Rate limit errors
   if (error?.status === 429) return true;
   if (error?.code === 'RESOURCE_EXHAUSTED') return true;
-  
+
   // Server errors
   if (error?.status >= 500 && error?.status < 600) return true;
-  
+
   // Network errors
   if (error?.code === 'ECONNRESET') return true;
   if (error?.code === 'ETIMEDOUT') return true;
   if (error?.code === 'ENOTFOUND') return true;
-  
+
   // Google API specific errors
   if (error?.message?.includes('quota')) return true;
   if (error?.message?.includes('rate limit')) return true;
-  
+
   return false;
 }
 
@@ -112,7 +112,7 @@ function calculateRetryDelay(
     );
     return Math.min(retryInfo.retryDelayMs, config.maxDelayMs);
   }
-  
+
   if (retryInfo?.retryAfter) {
     const delayMs = parseRetryAfter(retryInfo.retryAfter);
     console.log(
@@ -120,17 +120,17 @@ function calculateRetryDelay(
     );
     return Math.min(delayMs, config.maxDelayMs);
   }
-  
+
   // Exponential backoff with jitter
   const exponentialDelay = config.initialDelayMs * Math.pow(
     config.backoffMultiplier,
     attemptNumber
   );
-  
+
   // Add jitter (±20%)
   const jitter = exponentialDelay * 0.2 * (Math.random() - 0.5);
   const delayWithJitter = exponentialDelay + jitter;
-  
+
   return Math.min(delayWithJitter, config.maxDelayMs);
 }
 
@@ -148,15 +148,15 @@ export async function withRetry<T>(
     maxDelayMs: config.maxDelayMs ?? 60_000,
     backoffMultiplier: config.backoffMultiplier ?? 2,
   };
-  
+
   let lastError: any;
-  
+
   for (let attempt = 0; attempt <= retryConfig.maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error: any) {
       lastError = error;
-      
+
       // Don't retry if not retryable
       if (!isRetryableError(error)) {
         console.error(
@@ -165,7 +165,7 @@ export async function withRetry<T>(
         );
         throw error;
       }
-      
+
       // Don't retry if we've exhausted attempts
       if (attempt >= retryConfig.maxRetries) {
         console.error(
@@ -174,24 +174,24 @@ export async function withRetry<T>(
         );
         throw error;
       }
-      
+
       // Extract retry information
       const retryInfo = extractRetryInfo(error);
-      
+
       // Calculate delay
       const delayMs = calculateRetryDelay(attempt, retryConfig, retryInfo);
-      
+
       console.warn(
         `[Retry] ${operationName} failed (attempt ${attempt + 1}/${retryConfig.maxRetries + 1}). ` +
         `Retrying in ${delayMs}ms...`,
         error?.message || error
       );
-      
+
       // Wait before retrying
       await new Promise(resolve => setTimeout(resolve, delayMs));
     }
   }
-  
+
   // This should never be reached, but TypeScript requires it
   throw lastError;
 }
@@ -201,7 +201,7 @@ export async function withRetry<T>(
  */
 export const GEMINI_RETRY_CONFIG: RetryConfig = {
   maxRetries: 3,
-  initialDelayMs: 2000,
-  maxDelayMs: 120_000, // 2 minutes max
+  initialDelayMs: 1000,
+  maxDelayMs: 30_000, // 30 seconds max
   backoffMultiplier: 2,
 };

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+// Use built-in fetch for Node 18+
+const fetch = globalThis.fetch;
 
-const API_BASE = 'http://localhost:4000';
+const API_BASE = 'https://a2mp-app.ambitioussand-7984042f.eastus.azurecontainerapps.io';
 const HOST_PASSWORD = '12345';
 
 async function getAuthToken() {
@@ -34,7 +35,7 @@ async function createMeeting() {
         subject: 'Test Meeting - End Button Demo',
         details: 'This is a test meeting to demonstrate the new End Meeting button functionality.',
         participants: ['test@example.com', 'demo@example.com'],
-        participantBaseUrl: 'http://localhost:3000/participate'
+        participantBaseUrl: 'https://a2mp-app.ambitioussand-7984042f.eastus.azurecontainerapps.io/participate'
       })
     });
     
@@ -45,8 +46,8 @@ async function createMeeting() {
     const meeting = await response.json();
     console.log('✅ Meeting created successfully!');
     console.log('📋 Meeting ID:', meeting.id);
-    console.log('🌐 Live View URL:', `http://localhost:3000/m/${meeting.id}`);
-    console.log('🎯 Host Dashboard:', 'http://localhost:3000/host');
+    console.log('🌐 Live View URL:', `https://a2mp-app.ambitioussand-7984042f.eastus.azurecontainerapps.io/m/${meeting.id}`);
+    console.log('🎯 Host Dashboard:', 'https://a2mp-app.ambitioussand-7984042f.eastus.azurecontainerapps.io/host');
     
     return meeting;
   } catch (error) {

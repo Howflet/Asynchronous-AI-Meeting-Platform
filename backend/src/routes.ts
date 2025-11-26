@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { z } from "zod";
 import { initDb, db } from "./db.js";
+import { getCitationsForMeeting } from "./models/citations.js";
 import { createMeeting, getMeeting } from "./services/meetingService.js";
 import { getParticipantByToken, submitParticipantInput, haveAllSubmitted } from "./services/participantService.js";
 import { ensurePersonasForMeeting, runOneTurn, attemptConclusion, generateFinalReport, appendTurn, getHistory } from "./services/conversationService.js";
@@ -362,6 +363,8 @@ app.get("/api/meetings/:id/report", (req, res) => {
   // Get meeting details for subject and date
   const meeting = getMeeting(req.params.id);
   
+  const citations = getCitationsForMeeting(req.params.id);
+
   res.json({
     id: row.id,
     meetingId: row.meetingId,
@@ -370,6 +373,7 @@ app.get("/api/meetings/:id/report", (req, res) => {
     highlights: JSON.parse(row.highlights),
     decisions: JSON.parse(row.decisions),
     actionItems: JSON.parse(row.actionItems),
-    createdAt: row.createdAt
+    createdAt: row.createdAt,
+    citations
   });
 });
